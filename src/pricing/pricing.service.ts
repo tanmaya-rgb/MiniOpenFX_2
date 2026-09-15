@@ -26,7 +26,12 @@ export interface SymbolBreakdown {
   quoteCurrency: string;
 }
 
-const CACHE_KEY_PREFIX = 'price:';
+const PRICE_CACHE_KEY_PREFIX = 'price:';
+const SYMBOL_CACHE_KEY_PREFIX = 'symbol:';
+// A symbol's base/quote assets are effectively static (unlike its price),
+// so this is cached far longer — just long enough to avoid paying for an
+// exchangeInfo round-trip on every single quote creation.
+const SYMBOL_BREAKDOWN_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Binance is the sole authority on which symbols exist and what their
@@ -46,7 +51,7 @@ export class PricingService {
   async getPrice(rawSymbol: string): Promise<IndicativePrice> {
     const symbol = rawSymbol.trim().toUpperCase();
 
-    const cacheKey = `${CACHE_KEY_PREFIX}${symbol}`;
+    const cacheKey = `${PRICE_CACHE_KEY_PREFIX}${symbol}`;
     const cached = await this.redis.getJson<IndicativePrice>(cacheKey);
     if (cached) {
       return cached;
@@ -72,10 +77,20 @@ export class PricingService {
   async getSymbolBreakdown(rawSymbol: string): Promise<SymbolBreakdown> {
     const symbol = rawSymbol.trim().toUpperCase();
 
-    return this.mapBinanceErrors(async () => {
+    const cacheKey = `${SYMBOL_CACHE_KEY_PREFIX}${symbol}`;
+    const cached = await this.redis.getJson<SymbolBreakdown>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const breakdown = await this.mapBinanceErrors(async () => {
       const info = await this.binanceClient.getSymbolInfo(symbol);
       return { baseCurrency: info.baseAsset, quoteCurrency: info.quoteAsset };
     });
+
+    await this.redis.setJson(cacheKey, breakdown, SYMBOL_BREAKDOWN_CACHE_TTL_MS);
+
+    return breakdown;
   }
 
   private async mapBinanceErrors<T>(fn: () => Promise<T>): Promise<T> {

@@ -84,7 +84,13 @@ export const tradeSideValues = ['BUY', 'SELL'] as const;
 export type TradeSide = (typeof tradeSideValues)[number];
 export const tradeSideEnum = pgEnum('trade_side', tradeSideValues);
 
-export const quoteStatusValues = ['ACTIVE', 'EXPIRED', 'EXECUTED'] as const;
+/**
+ * Only ACTIVE and EXECUTED are ever persisted — expiry is a purely
+ * derived, read-time concept (now() >= expires_at), never written back to
+ * the row (no background job). See QuoteDisplayStatus in quote.mapper.ts
+ * for the additional 'EXPIRED' value shown in API responses.
+ */
+export const quoteStatusValues = ['ACTIVE', 'EXECUTED'] as const;
 export type QuoteStatus = (typeof quoteStatusValues)[number];
 export const quoteStatusEnum = pgEnum('quote_status', quoteStatusValues);
 

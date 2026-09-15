@@ -9,6 +9,9 @@ import { Decimal } from 'decimal.js';
 export const MINOR_UNIT_DECIMALS = 8;
 const MINOR_UNIT_SCALE = new Decimal(10).pow(MINOR_UNIT_DECIMALS);
 
+/** Shared DTO validation pattern for any "positive decimal amount" input field. */
+export const POSITIVE_DECIMAL_REGEX = /^\d+(\.\d+)?$/;
+
 export function toMinorUnits(amount: Decimal.Value): bigint {
   const scaled = new Decimal(amount).mul(MINOR_UNIT_SCALE);
   if (!scaled.isInteger()) {

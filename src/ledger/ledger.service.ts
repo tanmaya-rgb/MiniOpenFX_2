@@ -13,6 +13,17 @@ export interface LedgerMovementParams {
 }
 
 /**
+ * Proof that lockBalanceRows() was called for this client/currency set
+ * before debit()/credit() — a structural guarantee instead of a comment,
+ * so a future caller can't silently skip locking and reintroduce the
+ * AB-BA deadlock class described on lockBalanceRows below.
+ */
+export interface BalanceLock {
+  readonly clientId: string;
+  readonly currencies: ReadonlySet<string>;
+}
+
+/**
  * Money-movement mechanics shared by anything that debits/credits a
  * client's balance. Every call MUST run inside the caller's transaction
  * (via `tx`) so a trade's balance updates and ledger entries commit or
@@ -28,17 +39,20 @@ export class LedgerService {
    * legs — MUST lock them together via this method rather than locking
    * each individually, or two transactions touching the same currency pair
    * in opposite debit/credit roles can deadlock on each other (AB-BA lock
-   * inversion).
+   * inversion). The returned `BalanceLock` is required by debit()/credit(),
+   * so it's a compile error to call either without locking first.
    */
-  async lockBalanceRows(tx: DrizzleTx, clientId: string, currencies: string[]): Promise<void> {
+  async lockBalanceRows(
+    tx: DrizzleTx,
+    clientId: string,
+    currencies: string[],
+  ): Promise<BalanceLock> {
     const uniqueCurrencies = [...new Set(currencies)];
 
-    for (const currency of uniqueCurrencies) {
-      await tx
-        .insert(balances)
-        .values({ clientId, currency, availableMinor: 0n })
-        .onConflictDoNothing({ target: [balances.clientId, balances.currency] });
-    }
+    await tx
+      .insert(balances)
+      .values(uniqueCurrencies.map((currency) => ({ clientId, currency, availableMinor: 0n })))
+      .onConflictDoNothing({ target: [balances.clientId, balances.currency] });
 
     await tx
       .select()
@@ -46,14 +60,17 @@ export class LedgerService {
       .where(and(eq(balances.clientId, clientId), inArray(balances.currency, uniqueCurrencies)))
       .orderBy(balances.currency)
       .for('update');
+
+    return { clientId, currencies: new Set(uniqueCurrencies) };
   }
 
-  async debit(tx: DrizzleTx, params: LedgerMovementParams): Promise<void> {
+  async debit(tx: DrizzleTx, lock: BalanceLock, params: LedgerMovementParams): Promise<void> {
     const { clientId, currency, amountMinor, reason, refType, refId } = params;
+    assertCovers(lock, clientId, currency);
 
-    // The row is expected to already be locked (via lockBalanceRows) by the
-    // caller before calling debit(); the `available_minor >= amount` guard
-    // here is defense-in-depth, not the primary concurrency control.
+    // The row is guaranteed locked by `lock` (see lockBalanceRows); the
+    // `available_minor >= amount` guard here is defense-in-depth, not the
+    // primary concurrency control.
     const [updated] = await tx
       .update(balances)
       .set({ availableMinor: sql`${balances.availableMinor} - ${amountMinor}`, updatedAt: sql`now()` })
@@ -82,8 +99,9 @@ export class LedgerService {
     });
   }
 
-  async credit(tx: DrizzleTx, params: LedgerMovementParams): Promise<void> {
+  async credit(tx: DrizzleTx, lock: BalanceLock, params: LedgerMovementParams): Promise<void> {
     const { clientId, currency, amountMinor, reason, refType, refId } = params;
+    assertCovers(lock, clientId, currency);
 
     await tx
       .insert(balances)
@@ -104,5 +122,13 @@ export class LedgerService {
       refType,
       refId,
     });
+  }
+}
+
+function assertCovers(lock: BalanceLock, clientId: string, currency: string): void {
+  if (lock.clientId !== clientId || !lock.currencies.has(currency)) {
+    throw new Error(
+      `LedgerService: "${currency}" for client "${clientId}" was not covered by the provided lock`,
+    );
   }
 }

@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import { IsIn, IsInt, IsString, Matches, Max, Min } from 'class-validator';
+import { POSITIVE_DECIMAL_REGEX } from '../../domain/money.js';
 import { SYMBOL_FORMAT_REGEX } from '../../domain/symbol.js';
 import { tradeSideValues, type TradeSide } from '../../db/schema.js';
 
@@ -17,7 +18,7 @@ export class CreateQuoteDto {
   side!: TradeSide;
 
   @IsString()
-  @Matches(/^\d+(\.\d+)?$/, {
+  @Matches(POSITIVE_DECIMAL_REGEX, {
     message: 'baseAmount must be a positive decimal string like "0.5"',
   })
   baseAmount!: string;

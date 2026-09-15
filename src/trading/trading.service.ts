@@ -99,12 +99,14 @@ export class TradingService {
 
     // Lock both balance rows together, in one canonically-ordered
     // statement — see LedgerService.lockBalanceRows for why this must not
-    // be split into two separate locks (AB-BA deadlock risk).
-    await this.ledger.lockBalanceRows(tx, clientId, [debitCurrency, creditCurrency]);
+    // be split into two separate locks (AB-BA deadlock risk). The returned
+    // lock is required by debit()/credit() below, so skipping this step
+    // is a compile error, not just a documented convention.
+    const lock = await this.ledger.lockBalanceRows(tx, clientId, [debitCurrency, creditCurrency]);
 
     const tradeId = uuidv4();
 
-    await this.ledger.debit(tx, {
+    await this.ledger.debit(tx, lock, {
       clientId,
       currency: debitCurrency,
       amountMinor: debitAmount,
@@ -112,7 +114,7 @@ export class TradingService {
       refType: 'TRADE',
       refId: tradeId,
     });
-    await this.ledger.credit(tx, {
+    await this.ledger.credit(tx, lock, {
       clientId,
       currency: creditCurrency,
       amountMinor: creditAmount,

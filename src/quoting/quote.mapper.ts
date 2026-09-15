@@ -32,6 +32,12 @@ export interface CachedQuote extends Omit<QuoteRow, 'baseAmountMinor' | 'quoteAm
   createdAt: string;
 }
 
+/**
+ * ACTIVE/EXECUTED are real, persisted statuses (QuoteStatus); EXPIRED is
+ * never written to the DB — it exists only here, computed at read time.
+ */
+export type QuoteDisplayStatus = QuoteStatus | 'EXPIRED';
+
 export interface QuoteResponse {
   id: string;
   symbol: string;
@@ -41,7 +47,7 @@ export interface QuoteResponse {
   baseAmount: string;
   price: string;
   quoteAmount: string;
-  status: QuoteStatus;
+  status: QuoteDisplayStatus;
   expiresAt: string;
   createdAt: string;
 }
