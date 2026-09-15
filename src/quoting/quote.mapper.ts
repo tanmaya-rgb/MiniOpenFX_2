@@ -1,0 +1,84 @@
+import { fromMinorUnits } from '../domain/money.js';
+import type { QuoteStatus, TradeSide } from '../db/schema.js';
+
+/** The shape returned by a Drizzle select/insert against the quotes table. */
+export interface QuoteRow {
+  id: string;
+  clientId: string;
+  symbol: string;
+  side: TradeSide;
+  baseCurrency: string;
+  quoteCurrency: string;
+  baseAmountMinor: bigint;
+  price: string;
+  quoteAmountMinor: bigint;
+  status: QuoteStatus;
+  expiresAt: Date;
+  createdAt: Date;
+}
+
+/** JSON-safe form of QuoteRow for Redis (no bigint, no Date). */
+export interface CachedQuote extends Omit<QuoteRow, 'baseAmountMinor' | 'quoteAmountMinor' | 'expiresAt' | 'createdAt'> {
+  baseAmountMinor: string;
+  quoteAmountMinor: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface QuoteResponse {
+  id: string;
+  symbol: string;
+  side: TradeSide;
+  baseCurrency: string;
+  quoteCurrency: string;
+  baseAmount: string;
+  price: string;
+  quoteAmount: string;
+  status: QuoteStatus;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export function serializeQuote(row: QuoteRow): CachedQuote {
+  return {
+    ...row,
+    baseAmountMinor: row.baseAmountMinor.toString(),
+    quoteAmountMinor: row.quoteAmountMinor.toString(),
+    expiresAt: row.expiresAt.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export function deserializeQuote(cached: CachedQuote): QuoteRow {
+  return {
+    ...cached,
+    baseAmountMinor: BigInt(cached.baseAmountMinor),
+    quoteAmountMinor: BigInt(cached.quoteAmountMinor),
+    expiresAt: new Date(cached.expiresAt),
+    createdAt: new Date(cached.createdAt),
+  };
+}
+
+/**
+ * The DB status only ever transitions ACTIVE -> EXECUTED (set by the
+ * trading service). Expiry is never written back to the row (no background
+ * job, per the reliability design) — it's computed here at read time by
+ * comparing expiresAt against now.
+ */
+export function toQuoteResponse(row: QuoteRow): QuoteResponse {
+  const isLogicallyExpired = row.status === 'ACTIVE' && Date.now() >= row.expiresAt.getTime();
+
+  return {
+    id: row.id,
+    symbol: row.symbol,
+    side: row.side,
+    baseCurrency: row.baseCurrency,
+    quoteCurrency: row.quoteCurrency,
+    baseAmount: fromMinorUnits(row.baseAmountMinor).toString(),
+    price: row.price,
+    quoteAmount: fromMinorUnits(row.quoteAmountMinor).toString(),
+    status: isLogicallyExpired ? 'EXPIRED' : row.status,
+    expiresAt: row.expiresAt.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+  };
+}

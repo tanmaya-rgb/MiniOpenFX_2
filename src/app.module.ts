@@ -4,6 +4,7 @@ import { validateEnv } from './config/env.validation.js';
 import { DrizzleModule } from './db/drizzle.module.js';
 import { HealthModule } from './health/health.module.js';
 import { PricingModule } from './pricing/pricing.module.js';
+import { QuotingModule } from './quoting/quoting.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
 @Module({
@@ -16,6 +17,7 @@ import { RedisModule } from './redis/redis.module.js';
     RedisModule,
     HealthModule,
     PricingModule,
+    QuotingModule,
   ],
 })
 export class AppModule {}
