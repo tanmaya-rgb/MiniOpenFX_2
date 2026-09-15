@@ -8,6 +8,20 @@
       "when": 1789388585509,
       "tag": "0000_foamy_human_robot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789453477253,
+      "tag": "0001_lazy_maximus",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789454511797,
+      "tag": "0002_freezing_madame_masque",
+      "breakpoints": true
     }
   ]
 }

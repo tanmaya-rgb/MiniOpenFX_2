@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { validateEnv } from './config/env.validation.js';
 import { DrizzleModule } from './db/drizzle.module.js';
 import { HealthModule } from './health/health.module.js';
+import { PricingModule } from './pricing/pricing.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
 @Module({
@@ -14,6 +15,7 @@ import { RedisModule } from './redis/redis.module.js';
     DrizzleModule,
     RedisModule,
     HealthModule,
+    PricingModule,
   ],
 })
 export class AppModule {}

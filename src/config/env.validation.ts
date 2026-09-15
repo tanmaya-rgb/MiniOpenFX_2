@@ -3,7 +3,7 @@ import { IsInt, IsString, Min, validateSync } from 'class-validator';
 
 class EnvironmentVariables {
   @IsInt()
-  @Min(0)
+  @Min(1)
   PORT: number = 3000;
 
   @IsString()
@@ -16,7 +16,7 @@ class EnvironmentVariables {
   SEEDED_API_KEY!: string;
 
   @IsInt()
-  @Min(0)
+  @Min(1)
   PRICE_CACHE_TTL_MS: number = 1500;
 }
 
