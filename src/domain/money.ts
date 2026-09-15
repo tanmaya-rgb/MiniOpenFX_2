@@ -23,6 +23,11 @@ export function fromMinorUnits(minor: bigint): Decimal {
   return new Decimal(minor.toString()).div(MINOR_UNIT_SCALE);
 }
 
+/** The decimal-string form of a minor-units amount used in every API response. */
+export function formatMinorUnits(minor: bigint): string {
+  return fromMinorUnits(minor).toString();
+}
+
 /**
  * For amounts computed from a multiplication/division (e.g. base * price),
  * the raw result usually has more than MINOR_UNIT_DECIMALS of precision.

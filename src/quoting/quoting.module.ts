@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { ApiKeyAuthGuard } from '../common/guards/api-key-auth.guard.js';
+import { AuthModule } from '../common/auth.module.js';
 import { PricingModule } from '../pricing/pricing.module.js';
 import { QuotingController } from './quoting.controller.js';
 import { QuotingService } from './quoting.service.js';
 
 @Module({
-  imports: [PricingModule],
+  imports: [AuthModule, PricingModule],
   controllers: [QuotingController],
-  providers: [QuotingService, ApiKeyAuthGuard],
+  providers: [QuotingService],
   exports: [QuotingService],
 })
 export class QuotingModule {}

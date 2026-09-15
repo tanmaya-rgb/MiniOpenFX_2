@@ -9,6 +9,8 @@ import * as schema from './schema.js';
 export const DRIZZLE = Symbol('DRIZZLE');
 export const PG_POOL = Symbol('PG_POOL');
 export type DrizzleDb = NodePgDatabase<typeof schema>;
+/** The `tx` param passed into `db.transaction(async (tx) => ...)`. */
+export type DrizzleTx = Parameters<Parameters<DrizzleDb['transaction']>[0]>[0];
 
 @Global()
 @Module({

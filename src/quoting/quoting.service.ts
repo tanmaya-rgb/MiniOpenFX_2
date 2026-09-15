@@ -1,6 +1,7 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import { eq } from 'drizzle-orm';
+import { assertOwnedByClient } from '../common/assert-owned-by-client.js';
 import { DRIZZLE, type DrizzleDb } from '../db/drizzle.module.js';
 import { quotes } from '../db/schema.js';
 import { fromMinorUnits, roundToMinorUnits, toMinorUnits } from '../domain/money.js';
@@ -9,13 +10,12 @@ import { RedisService } from '../redis/redis.service.js';
 import type { CreateQuoteDto } from './dto/create-quote.dto.js';
 import {
   deserializeQuote,
+  quoteCacheKey,
   serializeQuote,
   toQuoteResponse,
   type QuoteResponse,
   type QuoteRow,
 } from './quote.mapper.js';
-
-const CACHE_KEY_PREFIX = 'quote:';
 
 @Injectable()
 export class QuotingService {
@@ -80,24 +80,24 @@ export class QuotingService {
       })
       .returning()) as QuoteRow[];
 
-    await this.redis.setJson(this.cacheKey(row.id), serializeQuote(row), dto.ttlSeconds * 1000);
+    await this.redis.setJson(quoteCacheKey(row.id), serializeQuote(row), dto.ttlSeconds * 1000);
 
     return toQuoteResponse(row);
   }
 
   async getQuoteById(clientId: string, id: string): Promise<QuoteResponse> {
     const row = await this.loadQuote(id);
+    return toQuoteResponse(assertOwnedByClient(row, clientId, `Quote "${id}" not found`));
+  }
 
-    if (!row || row.clientId !== clientId) {
-      throw new NotFoundException(`Quote "${id}" not found`);
-    }
-
-    return toQuoteResponse(row);
+  /** Called by the trading service once a quote transitions to EXECUTED. */
+  async invalidateCache(id: string): Promise<void> {
+    await this.redis.del(quoteCacheKey(id));
   }
 
   private async loadQuote(id: string): Promise<QuoteRow | null> {
     const cached = await this.redis.getJson<ReturnType<typeof serializeQuote>>(
-      this.cacheKey(id),
+      quoteCacheKey(id),
     );
     if (cached) {
       return deserializeQuote(cached);
@@ -112,14 +112,10 @@ export class QuotingService {
     if (row) {
       const remainingMs = row.expiresAt.getTime() - Date.now();
       if (remainingMs > 0) {
-        await this.redis.setJson(this.cacheKey(id), serializeQuote(row), remainingMs);
+        await this.redis.setJson(quoteCacheKey(id), serializeQuote(row), remainingMs);
       }
     }
 
     return row ?? null;
-  }
-
-  private cacheKey(id: string): string {
-    return `${CACHE_KEY_PREFIX}${id}`;
   }
 }

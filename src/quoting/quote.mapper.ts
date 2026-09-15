@@ -1,5 +1,12 @@
-import { fromMinorUnits } from '../domain/money.js';
+import { formatMinorUnits } from '../domain/money.js';
 import type { QuoteStatus, TradeSide } from '../db/schema.js';
+
+const CACHE_KEY_PREFIX = 'quote:';
+
+/** Shared with anything (e.g. the trading service) that must invalidate a cached quote. */
+export function quoteCacheKey(id: string): string {
+  return `${CACHE_KEY_PREFIX}${id}`;
+}
 
 /** The shape returned by a Drizzle select/insert against the quotes table. */
 export interface QuoteRow {
@@ -74,9 +81,9 @@ export function toQuoteResponse(row: QuoteRow): QuoteResponse {
     side: row.side,
     baseCurrency: row.baseCurrency,
     quoteCurrency: row.quoteCurrency,
-    baseAmount: fromMinorUnits(row.baseAmountMinor).toString(),
+    baseAmount: formatMinorUnits(row.baseAmountMinor),
     price: row.price,
-    quoteAmount: fromMinorUnits(row.quoteAmountMinor).toString(),
+    quoteAmount: formatMinorUnits(row.quoteAmountMinor),
     status: isLogicallyExpired ? 'EXPIRED' : row.status,
     expiresAt: row.expiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
