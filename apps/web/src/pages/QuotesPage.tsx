@@ -139,7 +139,7 @@ export function QuotesPage() {
               disabled={creating || !symbol.trim() || !baseAmount.trim()}
               className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
-              {creating ? 'Creating…' : 'Create quote'}
+              {creating ? 'Creating…' : 'Get quote'}
             </button>
           </div>
         </form>
