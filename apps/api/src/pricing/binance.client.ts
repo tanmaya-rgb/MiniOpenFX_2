@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-const BINANCE_BASE_URL = 'https://api.binance.com/api/v3';
+// api.binance.com 451s requests from US-hosted IPs (incl. GitHub Actions
+// runners) on regulatory geo-blocking grounds. data-api.binance.vision is
+// Binance's official public, geo-unrestricted mirror for read-only market
+// data — identical response shapes, and this client never calls anything
+// beyond public ticker/exchangeInfo endpoints.
+const BINANCE_BASE_URL = 'https://data-api.binance.vision/api/v3';
 const REQUEST_TIMEOUT_MS = 5000;
 
 export interface BookTicker {
