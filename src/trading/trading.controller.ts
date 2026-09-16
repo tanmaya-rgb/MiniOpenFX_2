@@ -6,16 +6,13 @@ import {
   HttpStatus,
   Post,
   Res,
-  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { CurrentClientId } from '../common/decorators/current-client-id.decorator.js';
-import { ApiKeyAuthGuard } from '../common/guards/api-key-auth.guard.js';
 import { CreateTradeDto } from './dto/create-trade.dto.js';
 import { TradingService } from './trading.service.js';
 
 @Controller('trades')
-@UseGuards(ApiKeyAuthGuard)
 export class TradingController {
   constructor(private readonly tradingService: TradingService) {}
 

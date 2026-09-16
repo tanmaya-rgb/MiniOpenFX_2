@@ -1,19 +1,9 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { CurrentClientId } from '../common/decorators/current-client-id.decorator.js';
-import { ApiKeyAuthGuard } from '../common/guards/api-key-auth.guard.js';
 import { CreateQuoteDto } from './dto/create-quote.dto.js';
 import { QuotingService } from './quoting.service.js';
 
 @Controller('quotes')
-@UseGuards(ApiKeyAuthGuard)
 export class QuotingController {
   constructor(private readonly quotingService: QuotingService) {}
 

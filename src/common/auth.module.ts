@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ApiKeyAuthGuard } from './guards/api-key-auth.guard.js';
 
 /**
- * Provided once here and imported by anything that needs it, so Nest
- * instantiates a single ApiKeyAuthGuard rather than one per consuming
- * module (each paying its own client-table scan + bcrypt.compare cost).
+ * Applies ApiKeyAuthGuard to every route in the app via APP_GUARD — no
+ * per-controller @UseGuards() needed. Routes that must stay public (only
+ * /v1/health today) opt out with @Public(), not by omission. Imported
+ * once, at the root AppModule.
  */
 @Module({
-  providers: [ApiKeyAuthGuard],
-  exports: [ApiKeyAuthGuard],
+  providers: [{ provide: APP_GUARD, useClass: ApiKeyAuthGuard }],
 })
 export class AuthModule {}

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BalancesModule } from './balances/balances.module.js';
+import { AuthModule } from './common/auth.module.js';
 import { validateEnv } from './config/env.validation.js';
 import { DrizzleModule } from './db/drizzle.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -18,6 +19,7 @@ import { TradingModule } from './trading/trading.module.js';
     }),
     DrizzleModule,
     RedisModule,
+    AuthModule,
     HealthModule,
     PricingModule,
     QuotingModule,
