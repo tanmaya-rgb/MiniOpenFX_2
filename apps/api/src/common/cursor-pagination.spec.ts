@@ -3,10 +3,15 @@ import { decodeCursor, encodeCursor } from './cursor-pagination.js';
 
 describe('cursor-pagination', () => {
   it('round-trips createdAt/id through encode -> decode', () => {
-    const cursor = { createdAt: new Date('2026-01-01T00:00:00.000Z'), id: 'abc-123' };
+    const cursor = {
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      id: 'abc-123',
+    };
     const decoded = decodeCursor(encodeCursor(cursor));
 
-    expect(decoded.createdAt.toISOString()).toBe(cursor.createdAt.toISOString());
+    expect(decoded.createdAt.toISOString()).toBe(
+      cursor.createdAt.toISOString(),
+    );
     expect(decoded.id).toBe(cursor.id);
   });
 
@@ -16,11 +21,15 @@ describe('cursor-pagination', () => {
   });
 
   it('rejects a cursor that is not valid base64url/JSON', () => {
-    expect(() => decodeCursor('not-a-real-cursor!!!')).toThrow(BadRequestException);
+    expect(() => decodeCursor('not-a-real-cursor!!!')).toThrow(
+      BadRequestException,
+    );
   });
 
   it('rejects a cursor missing required fields', () => {
-    const malformed = Buffer.from(JSON.stringify({ createdAt: 'not-a-date' })).toString('base64url');
+    const malformed = Buffer.from(
+      JSON.stringify({ createdAt: 'not-a-date' }),
+    ).toString('base64url');
     expect(() => decodeCursor(malformed)).toThrow(BadRequestException);
   });
 

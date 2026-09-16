@@ -1,9 +1,12 @@
 import { SYMBOL_FORMAT_REGEX } from './symbol.js';
 
 describe('SYMBOL_FORMAT_REGEX', () => {
-  it.each(['BTCUSDT', 'ETHUSDT', 'BTCFDUSD', 'ABCDE'])('accepts a well-shaped symbol %s', (symbol) => {
-    expect(SYMBOL_FORMAT_REGEX.test(symbol)).toBe(true);
-  });
+  it.each(['BTCUSDT', 'ETHUSDT', 'BTCFDUSD', 'ABCDE'])(
+    'accepts a well-shaped symbol %s',
+    (symbol) => {
+      expect(SYMBOL_FORMAT_REGEX.test(symbol)).toBe(true);
+    },
+  );
 
   it.each([
     'btcusdt', // lowercase

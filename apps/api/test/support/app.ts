@@ -5,12 +5,18 @@ import { AllExceptionsFilter } from '../../src/common/filters/all-exceptions.fil
 
 /** Mirrors the real bootstrap in src/main.ts (minus CORS, irrelevant to supertest). */
 export async function createTestApp(): Promise<INestApplication> {
-  const moduleFixture = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  const moduleFixture = await Test.createTestingModule({
+    imports: [AppModule],
+  }).compile();
 
   const app = moduleFixture.createNestApplication();
   app.setGlobalPrefix('v1');
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
   await app.init();

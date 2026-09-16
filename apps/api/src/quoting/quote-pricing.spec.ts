@@ -2,12 +2,22 @@ import { computeQuoteAmount } from './quote-pricing.js';
 
 describe('computeQuoteAmount', () => {
   it('BUY prices at the ask', () => {
-    const result = computeQuoteAmount('BUY', 50_000_000n /* 0.5 */, '67125.10', '67123.45');
+    const result = computeQuoteAmount(
+      'BUY',
+      50_000_000n /* 0.5 */,
+      '67125.10',
+      '67123.45',
+    );
     expect(result.price).toBe('67125.10');
   });
 
   it('SELL prices at the bid', () => {
-    const result = computeQuoteAmount('SELL', 50_000_000n /* 0.5 */, '67125.10', '67123.45');
+    const result = computeQuoteAmount(
+      'SELL',
+      50_000_000n /* 0.5 */,
+      '67125.10',
+      '67123.45',
+    );
     expect(result.price).toBe('67123.45');
   });
 
@@ -26,7 +36,12 @@ describe('computeQuoteAmount', () => {
 
   it('computes the expected quote amount for a realistic BUY', () => {
     // 0.5 BTC at an ask of 67125.10 USDT/BTC = 33562.55 USDT exactly.
-    const result = computeQuoteAmount('BUY', 50_000_000n, '67125.10', '67123.45');
+    const result = computeQuoteAmount(
+      'BUY',
+      50_000_000n,
+      '67125.10',
+      '67123.45',
+    );
     expect(result.quoteAmountMinor).toBe(3_356_255_000_000n);
   });
 

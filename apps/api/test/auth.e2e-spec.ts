@@ -62,6 +62,8 @@ describe('Auth (e2e)', () => {
   });
 
   it('GET /v1/prices requires auth even though it is "just market data"', () => {
-    return request(app.getHttpServer()).get('/v1/prices?symbol=BTCUSDT').expect(401);
+    return request(app.getHttpServer())
+      .get('/v1/prices?symbol=BTCUSDT')
+      .expect(401);
   });
 });

@@ -25,7 +25,10 @@ export class QuotingService {
     private readonly redis: RedisService,
   ) {}
 
-  async createQuote(clientId: string, dto: CreateQuoteDto): Promise<QuoteResponse> {
+  async createQuote(
+    clientId: string,
+    dto: CreateQuoteDto,
+  ): Promise<QuoteResponse> {
     let baseAmountMinor: bigint;
     try {
       baseAmountMinor = toMinorUnits(dto.baseAmount);
@@ -75,14 +78,20 @@ export class QuotingService {
       })
       .returning()) as QuoteRow[];
 
-    await this.redis.setJson(quoteCacheKey(row.id), serializeQuote(row), dto.ttlSeconds * 1000);
+    await this.redis.setJson(
+      quoteCacheKey(row.id),
+      serializeQuote(row),
+      dto.ttlSeconds * 1000,
+    );
 
     return toQuoteResponse(row);
   }
 
   async getQuoteById(clientId: string, id: string): Promise<QuoteResponse> {
     const row = await this.loadQuote(id);
-    return toQuoteResponse(assertOwnedByClient(row, clientId, `Quote "${id}" not found`));
+    return toQuoteResponse(
+      assertOwnedByClient(row, clientId, `Quote "${id}" not found`),
+    );
   }
 
   /** Called by the trading service once a quote transitions to EXECUTED. */
@@ -107,7 +116,11 @@ export class QuotingService {
     if (row) {
       const remainingMs = row.expiresAt.getTime() - Date.now();
       if (remainingMs > 0) {
-        await this.redis.setJson(quoteCacheKey(id), serializeQuote(row), remainingMs);
+        await this.redis.setJson(
+          quoteCacheKey(id),
+          serializeQuote(row),
+          remainingMs,
+        );
       }
     }
 

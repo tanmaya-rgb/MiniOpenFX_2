@@ -12,7 +12,10 @@ export interface Cursor {
  */
 export function encodeCursor(cursor: Cursor): string {
   return Buffer.from(
-    JSON.stringify({ createdAt: cursor.createdAt.toISOString(), id: cursor.id }),
+    JSON.stringify({
+      createdAt: cursor.createdAt.toISOString(),
+      id: cursor.id,
+    }),
   ).toString('base64url');
 }
 

@@ -1,15 +1,29 @@
-import { ConflictException, GoneException, Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  GoneException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { assertOwnedByClient } from '../common/assert-owned-by-client.js';
-import { DRIZZLE, type DrizzleDb, type DrizzleTx } from '../db/drizzle.module.js';
+import {
+  DRIZZLE,
+  type DrizzleDb,
+  type DrizzleTx,
+} from '../db/drizzle.module.js';
 import { quotes, trades } from '../db/schema.js';
 import { LedgerService } from '../ledger/ledger.service.js';
 import { QuotingService } from '../quoting/quoting.service.js';
 import type { CreateTradeDto } from './dto/create-trade.dto.js';
-import { toTradeResponse, type TradeResponse, type TradeRow } from './trade.mapper.js';
+import {
+  toTradeResponse,
+  type TradeResponse,
+  type TradeRow,
+} from './trade.mapper.js';
 
-const IDEMPOTENCY_KEY_UNIQUE_CONSTRAINT = 'trades_client_idempotency_key_unique';
+const IDEMPOTENCY_KEY_UNIQUE_CONSTRAINT =
+  'trades_client_idempotency_key_unique';
 const QUOTE_ID_UNIQUE_CONSTRAINT = 'trades_quote_id_unique';
 
 export interface TradeResult {
@@ -44,7 +58,12 @@ export class TradingService {
     let row: TradeRow;
     try {
       row = await this.db.transaction((tx) =>
-        this.executeWithinTransaction(tx, clientId, dto.quoteId, idempotencyKey),
+        this.executeWithinTransaction(
+          tx,
+          clientId,
+          dto.quoteId,
+          idempotencyKey,
+        ),
       );
     } catch (error) {
       if (isUniqueViolation(error, IDEMPOTENCY_KEY_UNIQUE_CONSTRAINT)) {
@@ -55,7 +74,9 @@ export class TradingService {
         }
       }
       if (isUniqueViolation(error, QUOTE_ID_UNIQUE_CONSTRAINT)) {
-        throw new ConflictException(`Quote "${dto.quoteId}" has already been executed`);
+        throw new ConflictException(
+          `Quote "${dto.quoteId}" has already been executed`,
+        );
       }
       throw error;
     }
@@ -66,7 +87,10 @@ export class TradingService {
     return { trade: toTradeResponse(row), replayed: false };
   }
 
-  private replayOrConflict(existing: TradeRow, requestedQuoteId: string): TradeResult {
+  private replayOrConflict(
+    existing: TradeRow,
+    requestedQuoteId: string,
+  ): TradeResult {
     if (existing.quoteId !== requestedQuoteId) {
       throw new ConflictException(
         'Idempotency-Key was already used to execute a different quote',
@@ -81,28 +105,45 @@ export class TradingService {
     quoteId: string,
     idempotencyKey: string,
   ): Promise<TradeRow> {
-    const [quoteRow] = await tx.select().from(quotes).where(eq(quotes.id, quoteId)).for('update');
-    const quote = assertOwnedByClient(quoteRow, clientId, `Quote "${quoteId}" not found`);
+    const [quoteRow] = await tx
+      .select()
+      .from(quotes)
+      .where(eq(quotes.id, quoteId))
+      .for('update');
+    const quote = assertOwnedByClient(
+      quoteRow,
+      clientId,
+      `Quote "${quoteId}" not found`,
+    );
 
     if (quote.status === 'EXECUTED') {
-      throw new ConflictException(`Quote "${quoteId}" has already been executed`);
+      throw new ConflictException(
+        `Quote "${quoteId}" has already been executed`,
+      );
     }
     if (Date.now() >= quote.expiresAt.getTime()) {
       throw new GoneException(`Quote "${quoteId}" has expired`);
     }
 
     // BUY: client owes quoteCurrency, receives baseCurrency. SELL: reversed.
-    const debitCurrency = quote.side === 'BUY' ? quote.quoteCurrency : quote.baseCurrency;
-    const debitAmount = quote.side === 'BUY' ? quote.quoteAmountMinor : quote.baseAmountMinor;
-    const creditCurrency = quote.side === 'BUY' ? quote.baseCurrency : quote.quoteCurrency;
-    const creditAmount = quote.side === 'BUY' ? quote.baseAmountMinor : quote.quoteAmountMinor;
+    const debitCurrency =
+      quote.side === 'BUY' ? quote.quoteCurrency : quote.baseCurrency;
+    const debitAmount =
+      quote.side === 'BUY' ? quote.quoteAmountMinor : quote.baseAmountMinor;
+    const creditCurrency =
+      quote.side === 'BUY' ? quote.baseCurrency : quote.quoteCurrency;
+    const creditAmount =
+      quote.side === 'BUY' ? quote.baseAmountMinor : quote.quoteAmountMinor;
 
     // Lock both balance rows together, in one canonically-ordered
     // statement — see LedgerService.lockBalanceRows for why this must not
     // be split into two separate locks (AB-BA deadlock risk). The returned
     // lock is required by debit()/credit() below, so skipping this step
     // is a compile error, not just a documented convention.
-    const lock = await this.ledger.lockBalanceRows(tx, clientId, [debitCurrency, creditCurrency]);
+    const lock = await this.ledger.lockBalanceRows(tx, clientId, [
+      debitCurrency,
+      creditCurrency,
+    ]);
 
     const tradeId = uuidv4();
 
@@ -141,7 +182,10 @@ export class TradingService {
       })
       .returning()) as TradeRow[];
 
-    await tx.update(quotes).set({ status: 'EXECUTED' }).where(eq(quotes.id, quote.id));
+    await tx
+      .update(quotes)
+      .set({ status: 'EXECUTED' })
+      .where(eq(quotes.id, quote.id));
 
     return trade;
   }
@@ -153,7 +197,12 @@ export class TradingService {
     const [row] = (await this.db
       .select()
       .from(trades)
-      .where(and(eq(trades.clientId, clientId), eq(trades.idempotencyKey, idempotencyKey)))
+      .where(
+        and(
+          eq(trades.clientId, clientId),
+          eq(trades.idempotencyKey, idempotencyKey),
+        ),
+      )
       .limit(1)) as TradeRow[];
 
     return row ?? null;

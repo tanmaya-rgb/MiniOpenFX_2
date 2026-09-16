@@ -41,5 +41,7 @@ export function roundToMinorUnits(
   amount: Decimal.Value,
   rounding: Decimal.Rounding,
 ): bigint {
-  return toMinorUnits(new Decimal(amount).toDecimalPlaces(MINOR_UNIT_DECIMALS, rounding));
+  return toMinorUnits(
+    new Decimal(amount).toDecimalPlaces(MINOR_UNIT_DECIMALS, rounding),
+  );
 }

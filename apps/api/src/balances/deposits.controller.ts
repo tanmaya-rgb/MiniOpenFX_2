@@ -9,7 +9,10 @@ export class DepositsController {
   constructor(private readonly balancesService: BalancesService) {}
 
   @Post()
-  createDeposit(@CurrentClientId() clientId: string, @Body() dto: CreateDepositDto) {
+  createDeposit(
+    @CurrentClientId() clientId: string,
+    @Body() dto: CreateDepositDto,
+  ) {
     return this.balancesService.createDeposit(clientId, dto);
   }
 }

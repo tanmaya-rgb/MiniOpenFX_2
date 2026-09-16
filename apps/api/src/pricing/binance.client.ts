@@ -81,7 +81,9 @@ export class BinanceClient {
 
     const info = data.symbols[0];
     if (!info) {
-      throw new BinanceUnknownSymbolError(`Binance rejected symbol "${symbol}"`);
+      throw new BinanceUnknownSymbolError(
+        `Binance rejected symbol "${symbol}"`,
+      );
     }
     return info;
   }
@@ -98,7 +100,9 @@ export class BinanceClient {
       const response = await fetch(url, { signal: controller.signal });
 
       if (response.status === 400) {
-        throw new BinanceUnknownSymbolError(`Binance rejected symbol "${symbol}"`);
+        throw new BinanceUnknownSymbolError(
+          `Binance rejected symbol "${symbol}"`,
+        );
       }
 
       if (!response.ok) {
@@ -127,7 +131,10 @@ export class BinanceClient {
         throw error;
       }
 
-      this.logger.error(`Failed to reach Binance for "${symbol}"`, error as Error);
+      this.logger.error(
+        `Failed to reach Binance for "${symbol}"`,
+        error as Error,
+      );
       throw new BinanceUnavailableError('Failed to reach Binance');
     } finally {
       clearTimeout(timeout);

@@ -33,7 +33,9 @@ describe('toTradeResponse', () => {
   });
 
   it('carries the persisted trade status through unchanged', () => {
-    expect(toTradeResponse(makeRow({ status: 'FILLED' })).status).toBe('FILLED');
+    expect(toTradeResponse(makeRow({ status: 'FILLED' })).status).toBe(
+      'FILLED',
+    );
   });
 
   it('serializes createdAt as an ISO string', () => {

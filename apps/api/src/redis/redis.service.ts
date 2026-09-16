@@ -1,4 +1,9 @@
-import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  type OnModuleDestroy,
+} from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import { REDIS_CLIENT } from './redis.constants.js';
 
@@ -17,22 +22,37 @@ export class RedisService implements OnModuleDestroy {
   constructor(@Inject(REDIS_CLIENT) private readonly client: Redis) {}
 
   async getJson<T>(key: string): Promise<T | null> {
-    return this.failSoft('read', key, async () => {
-      const raw = await this.client.get(key);
-      return raw ? (JSON.parse(raw) as T) : null;
-    }, null);
+    return this.failSoft(
+      'read',
+      key,
+      async () => {
+        const raw = await this.client.get(key);
+        return raw ? (JSON.parse(raw) as T) : null;
+      },
+      null,
+    );
   }
 
   async setJson(key: string, value: unknown, ttlMs: number): Promise<void> {
-    await this.failSoft('write', key, async () => {
-      await this.client.set(key, JSON.stringify(value), 'PX', ttlMs);
-    }, undefined);
+    await this.failSoft(
+      'write',
+      key,
+      async () => {
+        await this.client.set(key, JSON.stringify(value), 'PX', ttlMs);
+      },
+      undefined,
+    );
   }
 
   async del(key: string): Promise<void> {
-    await this.failSoft('delete', key, async () => {
-      await this.client.del(key);
-    }, undefined);
+    await this.failSoft(
+      'delete',
+      key,
+      async () => {
+        await this.client.del(key);
+      },
+      undefined,
+    );
   }
 
   async ping(): Promise<boolean> {
@@ -52,7 +72,9 @@ export class RedisService implements OnModuleDestroy {
     try {
       return await fn();
     } catch (error) {
-      this.logger.warn(`Cache ${action} failed for key "${key}": ${(error as Error).message}`);
+      this.logger.warn(
+        `Cache ${action} failed for key "${key}": ${(error as Error).message}`,
+      );
       return fallback;
     }
   }

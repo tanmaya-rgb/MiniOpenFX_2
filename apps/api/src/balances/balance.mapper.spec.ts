@@ -2,7 +2,12 @@ import { toBalanceResponse } from './balance.mapper.js';
 
 describe('toBalanceResponse', () => {
   it('formats a bigint minor-unit balance as a decimal string', () => {
-    expect(toBalanceResponse({ currency: 'USDT', availableMinor: 1_000_000_000_000n })).toEqual({
+    expect(
+      toBalanceResponse({
+        currency: 'USDT',
+        availableMinor: 1_000_000_000_000n,
+      }),
+    ).toEqual({
       currency: 'USDT',
       available: '10000',
     });

@@ -8,12 +8,23 @@ const API_KEY = process.env.SEEDED_API_KEY!;
 
 async function createActiveQuote(
   app: INestApplication,
-  overrides: Partial<{ symbol: string; side: 'BUY' | 'SELL'; baseAmount: string; ttlSeconds: number }> = {},
+  overrides: Partial<{
+    symbol: string;
+    side: 'BUY' | 'SELL';
+    baseAmount: string;
+    ttlSeconds: number;
+  }> = {},
 ) {
   const res = await request(app.getHttpServer())
     .post('/v1/quotes')
     .set(authHeader(API_KEY))
-    .send({ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.001', ttlSeconds: 60, ...overrides })
+    .send({
+      symbol: 'BTCUSDT',
+      side: 'BUY',
+      baseAmount: '0.001',
+      ttlSeconds: 60,
+      ...overrides,
+    })
     .expect(201);
   return res.body as { id: string };
 }
@@ -23,7 +34,11 @@ function getBalance(app: INestApplication, currency: string) {
     .get('/v1/balances')
     .set(authHeader(API_KEY))
     .expect(200)
-    .then(({ body }) => (body as Array<{ currency: string; available: string }>).find((b) => b.currency === currency));
+    .then(({ body }) =>
+      (body as Array<{ currency: string; available: string }>).find(
+        (b) => b.currency === currency,
+      ),
+    );
 }
 
 describe('Trading (e2e)', () => {
@@ -41,7 +56,10 @@ describe('Trading (e2e)', () => {
     const usdtBefore = await getBalance(app, 'USDT');
     const btcBefore = await getBalance(app, 'BTC');
 
-    const quote = await createActiveQuote(app, { side: 'BUY', baseAmount: '0.001' });
+    const quote = await createActiveQuote(app, {
+      side: 'BUY',
+      baseAmount: '0.001',
+    });
     const trade = await request(app.getHttpServer())
       .post('/v1/trades')
       .set(authHeader(API_KEY))
@@ -49,19 +67,21 @@ describe('Trading (e2e)', () => {
       .send({ quoteId: quote.id })
       .expect(201);
 
-    expect(trade.body).toMatchObject({ quoteId: quote.id, side: 'BUY', status: 'FILLED' });
+    expect(trade.body).toMatchObject({
+      quoteId: quote.id,
+      side: 'BUY',
+      status: 'FILLED',
+    });
 
     const usdtAfter = await getBalance(app, 'USDT');
     const btcAfter = await getBalance(app, 'BTC');
 
-    expect(Number(usdtBefore!.available) - Number(usdtAfter!.available)).toBeCloseTo(
-      Number(trade.body.quoteAmount),
-      8,
-    );
-    expect(Number(btcAfter!.available) - Number(btcBefore!.available)).toBeCloseTo(
-      Number(trade.body.baseAmount),
-      8,
-    );
+    expect(
+      Number(usdtBefore!.available) - Number(usdtAfter!.available),
+    ).toBeCloseTo(Number(trade.body.quoteAmount), 8);
+    expect(
+      Number(btcAfter!.available) - Number(btcBefore!.available),
+    ).toBeCloseTo(Number(trade.body.baseAmount), 8);
   });
 
   it('replays idempotently: same key + same quote returns 200 with the unchanged original trade', async () => {
@@ -159,7 +179,10 @@ describe('Trading (e2e)', () => {
   it('422s a trade that would exceed the available balance, leaving the balance untouched', async () => {
     const usdtBefore = await getBalance(app, 'USDT');
     // Wildly over any realistic seeded/demo USDT balance.
-    const quote = await createActiveQuote(app, { side: 'BUY', baseAmount: '1000' });
+    const quote = await createActiveQuote(app, {
+      side: 'BUY',
+      baseAmount: '1000',
+    });
 
     await request(app.getHttpServer())
       .post('/v1/trades')

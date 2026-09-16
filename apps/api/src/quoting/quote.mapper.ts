@@ -25,7 +25,10 @@ export interface QuoteRow {
 }
 
 /** JSON-safe form of QuoteRow for Redis (no bigint, no Date). */
-export interface CachedQuote extends Omit<QuoteRow, 'baseAmountMinor' | 'quoteAmountMinor' | 'expiresAt' | 'createdAt'> {
+export interface CachedQuote extends Omit<
+  QuoteRow,
+  'baseAmountMinor' | 'quoteAmountMinor' | 'expiresAt' | 'createdAt'
+> {
   baseAmountMinor: string;
   quoteAmountMinor: string;
   expiresAt: string;
@@ -79,7 +82,8 @@ export function deserializeQuote(cached: CachedQuote): QuoteRow {
  * comparing expiresAt against now.
  */
 export function toQuoteResponse(row: QuoteRow): QuoteResponse {
-  const isLogicallyExpired = row.status === 'ACTIVE' && Date.now() >= row.expiresAt.getTime();
+  const isLogicallyExpired =
+    row.status === 'ACTIVE' && Date.now() >= row.expiresAt.getTime();
 
   return {
     id: row.id,

@@ -51,20 +51,35 @@ export class LedgerService {
 
     await tx
       .insert(balances)
-      .values(uniqueCurrencies.map((currency) => ({ clientId, currency, availableMinor: 0n })))
+      .values(
+        uniqueCurrencies.map((currency) => ({
+          clientId,
+          currency,
+          availableMinor: 0n,
+        })),
+      )
       .onConflictDoNothing({ target: [balances.clientId, balances.currency] });
 
     await tx
       .select()
       .from(balances)
-      .where(and(eq(balances.clientId, clientId), inArray(balances.currency, uniqueCurrencies)))
+      .where(
+        and(
+          eq(balances.clientId, clientId),
+          inArray(balances.currency, uniqueCurrencies),
+        ),
+      )
       .orderBy(balances.currency)
       .for('update');
 
     return { clientId, currencies: new Set(uniqueCurrencies) };
   }
 
-  async debit(tx: DrizzleTx, lock: BalanceLock, params: LedgerMovementParams): Promise<void> {
+  async debit(
+    tx: DrizzleTx,
+    lock: BalanceLock,
+    params: LedgerMovementParams,
+  ): Promise<void> {
     const { clientId, currency, amountMinor, reason, refType, refId } = params;
     assertCovers(lock, clientId, currency);
 
@@ -73,7 +88,10 @@ export class LedgerService {
     // primary concurrency control.
     const [updated] = await tx
       .update(balances)
-      .set({ availableMinor: sql`${balances.availableMinor} - ${amountMinor}`, updatedAt: sql`now()` })
+      .set({
+        availableMinor: sql`${balances.availableMinor} - ${amountMinor}`,
+        updatedAt: sql`now()`,
+      })
       .where(
         and(
           eq(balances.clientId, clientId),
@@ -99,7 +117,11 @@ export class LedgerService {
     });
   }
 
-  async credit(tx: DrizzleTx, lock: BalanceLock, params: LedgerMovementParams): Promise<void> {
+  async credit(
+    tx: DrizzleTx,
+    lock: BalanceLock,
+    params: LedgerMovementParams,
+  ): Promise<void> {
     const { clientId, currency, amountMinor, reason, refType, refId } = params;
     assertCovers(lock, clientId, currency);
 
@@ -125,7 +147,11 @@ export class LedgerService {
   }
 }
 
-function assertCovers(lock: BalanceLock, clientId: string, currency: string): void {
+function assertCovers(
+  lock: BalanceLock,
+  clientId: string,
+  currency: string,
+): void {
   if (lock.clientId !== clientId || !lock.currencies.has(currency)) {
     throw new Error(
       `LedgerService: "${currency}" for client "${clientId}" was not covered by the provided lock`,

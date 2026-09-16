@@ -6,7 +6,11 @@ import { balances } from '../db/schema.js';
 import { toMinorUnits } from '../domain/money.js';
 import { LedgerService } from '../ledger/ledger.service.js';
 import type { CreateDepositDto } from './dto/create-deposit.dto.js';
-import { toBalanceResponse, type BalanceResponse, type BalanceRow } from './balance.mapper.js';
+import {
+  toBalanceResponse,
+  type BalanceResponse,
+  type BalanceRow,
+} from './balance.mapper.js';
 
 @Injectable()
 export class BalancesService {
@@ -17,7 +21,10 @@ export class BalancesService {
 
   async getBalances(clientId: string): Promise<BalanceResponse[]> {
     const rows = (await this.db
-      .select({ currency: balances.currency, availableMinor: balances.availableMinor })
+      .select({
+        currency: balances.currency,
+        availableMinor: balances.availableMinor,
+      })
       .from(balances)
       .where(eq(balances.clientId, clientId))
       .orderBy(balances.currency)) as BalanceRow[];
@@ -30,12 +37,17 @@ export class BalancesService {
    * deposit, etc.) in this assignment's scope, so this is the only way to
    * get money into the system for a client beyond the seeded balances.
    */
-  async createDeposit(clientId: string, dto: CreateDepositDto): Promise<BalanceResponse[]> {
+  async createDeposit(
+    clientId: string,
+    dto: CreateDepositDto,
+  ): Promise<BalanceResponse[]> {
     let amountMinor: bigint;
     try {
       amountMinor = toMinorUnits(dto.amount);
     } catch {
-      throw new BadRequestException('amount must not have more than 8 decimal places');
+      throw new BadRequestException(
+        'amount must not have more than 8 decimal places',
+      );
     }
     if (amountMinor <= 0n) {
       throw new BadRequestException('amount must be greater than zero');
@@ -44,7 +56,9 @@ export class BalancesService {
     const depositId = uuidv4();
 
     await this.db.transaction(async (tx) => {
-      const lock = await this.ledger.lockBalanceRows(tx, clientId, [dto.currency]);
+      const lock = await this.ledger.lockBalanceRows(tx, clientId, [
+        dto.currency,
+      ]);
       await this.ledger.credit(tx, lock, {
         clientId,
         currency: dto.currency,

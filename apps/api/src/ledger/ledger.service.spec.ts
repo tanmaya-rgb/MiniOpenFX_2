@@ -43,7 +43,10 @@ describe('LedgerService — BalanceLock coverage guard', () => {
   const service = new LedgerService();
 
   it('debit() throws (and never touches tx) when the lock does not cover the currency', async () => {
-    const lock: BalanceLock = { clientId: 'client-1', currencies: new Set(['USDT']) };
+    const lock: BalanceLock = {
+      clientId: 'client-1',
+      currencies: new Set(['USDT']),
+    };
     await expect(
       service.debit(makeUntouchableTx(), lock, {
         clientId: 'client-1',
@@ -57,7 +60,10 @@ describe('LedgerService — BalanceLock coverage guard', () => {
   });
 
   it('debit() throws when the lock covers the currency but for a different client', async () => {
-    const lock: BalanceLock = { clientId: 'someone-else', currencies: new Set(['USDT']) };
+    const lock: BalanceLock = {
+      clientId: 'someone-else',
+      currencies: new Set(['USDT']),
+    };
     await expect(
       service.debit(makeUntouchableTx(), lock, {
         clientId: 'client-1',
@@ -71,7 +77,10 @@ describe('LedgerService — BalanceLock coverage guard', () => {
   });
 
   it('credit() enforces the same coverage guard', async () => {
-    const lock: BalanceLock = { clientId: 'client-1', currencies: new Set(['USDT']) };
+    const lock: BalanceLock = {
+      clientId: 'client-1',
+      currencies: new Set(['USDT']),
+    };
     await expect(
       service.credit(makeUntouchableTx(), lock, {
         clientId: 'client-1',
@@ -87,7 +96,10 @@ describe('LedgerService — BalanceLock coverage guard', () => {
 
 describe('LedgerService.debit — insufficient balance', () => {
   const service = new LedgerService();
-  const lock: BalanceLock = { clientId: 'client-1', currencies: new Set(['USDT']) };
+  const lock: BalanceLock = {
+    clientId: 'client-1',
+    currencies: new Set(['USDT']),
+  };
 
   it('throws UnprocessableEntityException when the guarded UPDATE affects no row', async () => {
     // The `available_minor >= amount` WHERE guard means an insufficient
@@ -107,7 +119,9 @@ describe('LedgerService.debit — insufficient balance', () => {
   });
 
   it('inserts a ledger entry when the balance UPDATE succeeds', async () => {
-    const tx = makeTx([{ clientId: 'client-1', currency: 'USDT', availableMinor: 9_000_000n }]);
+    const tx = makeTx([
+      { clientId: 'client-1', currency: 'USDT', availableMinor: 9_000_000n },
+    ]);
 
     await service.debit(tx, lock, {
       clientId: 'client-1',
@@ -120,6 +134,8 @@ describe('LedgerService.debit — insufficient balance', () => {
 
     // Two inserts happen elsewhere (lockBalanceRows); here debit() itself
     // should have called tx.insert exactly once, for the ledger entry.
-    expect((tx.insert as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(1);
+    expect(
+      tx.insert as unknown as ReturnType<typeof vi.fn>,
+    ).toHaveBeenCalledTimes(1);
   });
 });

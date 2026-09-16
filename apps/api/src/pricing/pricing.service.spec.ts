@@ -16,14 +16,19 @@ import type { RedisService } from '../redis/redis.service.js';
 function makeService() {
   const getBookTicker = vi.fn();
   const getSymbolInfo = vi.fn();
-  const binanceClient = { getBookTicker, getSymbolInfo } as unknown as BinanceClient;
+  const binanceClient = {
+    getBookTicker,
+    getSymbolInfo,
+  } as unknown as BinanceClient;
 
   const getJson = vi.fn().mockResolvedValue(null);
   const setJson = vi.fn().mockResolvedValue(undefined);
   const del = vi.fn().mockResolvedValue(undefined);
   const redis = { getJson, setJson, del } as unknown as RedisService;
 
-  const config = { get: vi.fn().mockReturnValue(1500) } as unknown as ConfigService;
+  const config = {
+    get: vi.fn().mockReturnValue(1500),
+  } as unknown as ConfigService;
 
   const service = new PricingService(binanceClient, redis, config);
   return { service, getBookTicker, getSymbolInfo, getJson, setJson };
@@ -41,7 +46,12 @@ describe('PricingService.getPrice — cache-aside', () => {
     const result = await service.getPrice('btcusdt');
 
     expect(getBookTicker).toHaveBeenCalledWith('BTCUSDT');
-    expect(result).toMatchObject({ symbol: 'BTCUSDT', bid: '67123.45', ask: '67125.10', source: 'binance' });
+    expect(result).toMatchObject({
+      symbol: 'BTCUSDT',
+      bid: '67123.45',
+      ask: '67125.10',
+      source: 'binance',
+    });
     expect(setJson).toHaveBeenCalledWith(
       'price:BTCUSDT',
       expect.objectContaining({ symbol: 'BTCUSDT' }),
@@ -51,7 +61,13 @@ describe('PricingService.getPrice — cache-aside', () => {
 
   it('returns the cached value and never calls Binance on a cache hit', async () => {
     const { service, getBookTicker, getJson } = makeService();
-    const cached = { symbol: 'BTCUSDT', bid: '1', ask: '2', timestamp: 123, source: 'binance' as const };
+    const cached = {
+      symbol: 'BTCUSDT',
+      bid: '1',
+      ask: '2',
+      timestamp: 123,
+      source: 'binance' as const,
+    };
     getJson.mockResolvedValueOnce(cached);
 
     const result = await service.getPrice('BTCUSDT');
@@ -62,7 +78,11 @@ describe('PricingService.getPrice — cache-aside', () => {
 
   it('normalizes case/whitespace before calling Binance or the cache', async () => {
     const { service, getBookTicker, getJson } = makeService();
-    getBookTicker.mockResolvedValueOnce({ symbol: 'BTCUSDT', bidPrice: '1', askPrice: '2' });
+    getBookTicker.mockResolvedValueOnce({
+      symbol: 'BTCUSDT',
+      bidPrice: '1',
+      askPrice: '2',
+    });
 
     await service.getPrice('  btcusdt  ');
 
@@ -74,21 +94,27 @@ describe('PricingService.getPrice — cache-aside', () => {
     const { service, getBookTicker } = makeService();
     getBookTicker.mockRejectedValueOnce(new BinanceUnknownSymbolError('nope'));
 
-    await expect(service.getPrice('ZZZUSDT')).rejects.toThrow(BadRequestException);
+    await expect(service.getPrice('ZZZUSDT')).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('maps BinanceTimeoutError to a 504', async () => {
     const { service, getBookTicker } = makeService();
     getBookTicker.mockRejectedValueOnce(new BinanceTimeoutError('slow'));
 
-    await expect(service.getPrice('BTCUSDT')).rejects.toThrow(GatewayTimeoutException);
+    await expect(service.getPrice('BTCUSDT')).rejects.toThrow(
+      GatewayTimeoutException,
+    );
   });
 
   it('maps BinanceUnavailableError to a 502', async () => {
     const { service, getBookTicker } = makeService();
     getBookTicker.mockRejectedValueOnce(new BinanceUnavailableError('down'));
 
-    await expect(service.getPrice('BTCUSDT')).rejects.toThrow(BadGatewayException);
+    await expect(service.getPrice('BTCUSDT')).rejects.toThrow(
+      BadGatewayException,
+    );
   });
 
   it('does not cache a failed lookup', async () => {
@@ -103,7 +129,11 @@ describe('PricingService.getPrice — cache-aside', () => {
 describe('PricingService.getSymbolBreakdown — cache-aside with its own TTL/prefix', () => {
   it('calls Binance exchangeInfo and caches with a 24h TTL, separate from the price cache', async () => {
     const { service, getSymbolInfo, setJson } = makeService();
-    getSymbolInfo.mockResolvedValueOnce({ symbol: 'BTCUSDT', baseAsset: 'BTC', quoteAsset: 'USDT' });
+    getSymbolInfo.mockResolvedValueOnce({
+      symbol: 'BTCUSDT',
+      baseAsset: 'BTC',
+      quoteAsset: 'USDT',
+    });
 
     const result = await service.getSymbolBreakdown('btcusdt');
 
@@ -117,7 +147,10 @@ describe('PricingService.getSymbolBreakdown — cache-aside with its own TTL/pre
 
   it('returns the cached breakdown and never calls Binance on a cache hit', async () => {
     const { service, getSymbolInfo, getJson } = makeService();
-    getJson.mockResolvedValueOnce({ baseCurrency: 'BTC', quoteCurrency: 'USDT' });
+    getJson.mockResolvedValueOnce({
+      baseCurrency: 'BTC',
+      quoteCurrency: 'USDT',
+    });
 
     const result = await service.getSymbolBreakdown('BTCUSDT');
 
@@ -129,6 +162,8 @@ describe('PricingService.getSymbolBreakdown — cache-aside with its own TTL/pre
     const { service, getSymbolInfo } = makeService();
     getSymbolInfo.mockRejectedValueOnce(new BinanceUnknownSymbolError('nope'));
 
-    await expect(service.getSymbolBreakdown('ZZZUSDT')).rejects.toThrow(BadRequestException);
+    await expect(service.getSymbolBreakdown('ZZZUSDT')).rejects.toThrow(
+      BadRequestException,
+    );
   });
 });

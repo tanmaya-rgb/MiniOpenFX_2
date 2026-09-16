@@ -21,6 +21,8 @@ describe('money', () => {
   });
 
   it('rounds down (in the houses favor for amounts paid out) when asked', () => {
-    expect(roundToMinorUnits('1.999999995', Decimal.ROUND_DOWN)).toBe(199999999n);
+    expect(roundToMinorUnits('1.999999995', Decimal.ROUND_DOWN)).toBe(
+      199999999n,
+    );
   });
 });

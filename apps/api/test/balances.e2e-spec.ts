@@ -2,6 +2,7 @@ import 'dotenv/config';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { authHeader, createTestApp } from './support/app.js';
+import { cleanupSyntheticCurrency } from './support/db.js';
 
 const API_KEY = process.env.SEEDED_API_KEY!;
 
@@ -22,7 +23,9 @@ describe('Balances (e2e)', () => {
       .set(authHeader(API_KEY))
       .expect(200);
 
-    const currencies = (res.body as Array<{ currency: string }>).map((b) => b.currency);
+    const currencies = (res.body as Array<{ currency: string }>).map(
+      (b) => b.currency,
+    );
     expect(currencies).toEqual(expect.arrayContaining(['USDT', 'BTC']));
   });
 
@@ -37,8 +40,9 @@ describe('Balances (e2e)', () => {
         .set(authHeader(API_KEY))
         .expect(200);
       const usdtBefore = Number(
-        (before.body as Array<{ currency: string; available: string }>).find((b) => b.currency === 'USDT')!
-          .available,
+        (before.body as Array<{ currency: string; available: string }>).find(
+          (b) => b.currency === 'USDT',
+        )!.available,
       );
 
       const res = await request(app.getHttpServer())
@@ -49,23 +53,32 @@ describe('Balances (e2e)', () => {
 
       expect(Array.isArray(res.body)).toBe(true);
       const usdtAfter = Number(
-        (res.body as Array<{ currency: string; available: string }>).find((b) => b.currency === 'USDT')!.available,
+        (res.body as Array<{ currency: string; available: string }>).find(
+          (b) => b.currency === 'USDT',
+        )!.available,
       );
       expect(usdtAfter - usdtBefore).toBeCloseTo(10, 8);
     });
 
     it('creates a fresh balance row for a currency the client has never held', async () => {
       const currency = `T${Date.now().toString(36).toUpperCase().slice(-8)}`;
-      const res = await request(app.getHttpServer())
-        .post('/v1/deposits')
-        .set(authHeader(API_KEY))
-        .send({ currency, amount: '5' })
-        .expect(201);
+      try {
+        const res = await request(app.getHttpServer())
+          .post('/v1/deposits')
+          .set(authHeader(API_KEY))
+          .send({ currency, amount: '5' })
+          .expect(201);
 
-      const row = (res.body as Array<{ currency: string; available: string }>).find(
-        (b) => b.currency === currency,
-      );
-      expect(row?.available).toBe('5');
+        const row = (
+          res.body as Array<{ currency: string; available: string }>
+        ).find((b) => b.currency === currency);
+        expect(row?.available).toBe('5');
+      } finally {
+        // This currency is synthetic and only ever exists for this one
+        // assertion — leaving it behind would permanently pollute the
+        // shared dev database on every local e2e run (see cleanupSyntheticCurrency).
+        await cleanupSyntheticCurrency(currency);
+      }
     });
 
     it.each([

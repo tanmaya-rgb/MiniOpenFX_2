@@ -88,7 +88,11 @@ export class PricingService {
       return { baseCurrency: info.baseAsset, quoteCurrency: info.quoteAsset };
     });
 
-    await this.redis.setJson(cacheKey, breakdown, SYMBOL_BREAKDOWN_CACHE_TTL_MS);
+    await this.redis.setJson(
+      cacheKey,
+      breakdown,
+      SYMBOL_BREAKDOWN_CACHE_TTL_MS,
+    );
 
     return breakdown;
   }

@@ -7,7 +7,9 @@ import { tradeSideValues, type TradeSide } from '../../db/schema.js';
 const MAX_TTL_SECONDS = 300;
 
 export class CreateQuoteDto {
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
   @IsString()
   @Matches(SYMBOL_FORMAT_REGEX, {
     message: 'symbol must be an alphanumeric pair like BTCUSDT',

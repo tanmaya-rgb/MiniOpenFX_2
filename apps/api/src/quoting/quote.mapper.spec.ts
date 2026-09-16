@@ -1,4 +1,9 @@
-import { deserializeQuote, serializeQuote, toQuoteResponse, type QuoteRow } from './quote.mapper.js';
+import {
+  deserializeQuote,
+  serializeQuote,
+  toQuoteResponse,
+  type QuoteRow,
+} from './quote.mapper.js';
 
 function makeRow(overrides: Partial<QuoteRow> = {}): QuoteRow {
   return {
@@ -20,22 +25,34 @@ function makeRow(overrides: Partial<QuoteRow> = {}): QuoteRow {
 
 describe('toQuoteResponse', () => {
   it('reports ACTIVE for a not-yet-expired ACTIVE quote', () => {
-    const row = makeRow({ status: 'ACTIVE', expiresAt: new Date(Date.now() + 60_000) });
+    const row = makeRow({
+      status: 'ACTIVE',
+      expiresAt: new Date(Date.now() + 60_000),
+    });
     expect(toQuoteResponse(row).status).toBe('ACTIVE');
   });
 
   it('derives EXPIRED for an ACTIVE quote whose expiresAt has passed, without touching the DB', () => {
-    const row = makeRow({ status: 'ACTIVE', expiresAt: new Date(Date.now() - 1) });
+    const row = makeRow({
+      status: 'ACTIVE',
+      expiresAt: new Date(Date.now() - 1),
+    });
     expect(toQuoteResponse(row).status).toBe('EXPIRED');
   });
 
   it('reports EXECUTED even if expiresAt has also passed (EXECUTED wins over expiry)', () => {
-    const row = makeRow({ status: 'EXECUTED', expiresAt: new Date(Date.now() - 1) });
+    const row = makeRow({
+      status: 'EXECUTED',
+      expiresAt: new Date(Date.now() - 1),
+    });
     expect(toQuoteResponse(row).status).toBe('EXECUTED');
   });
 
   it('formats bigint minor-unit amounts as decimal strings', () => {
-    const row = makeRow({ baseAmountMinor: 50_000_000n, quoteAmountMinor: 3_356_255_000_000n });
+    const row = makeRow({
+      baseAmountMinor: 50_000_000n,
+      quoteAmountMinor: 3_356_255_000_000n,
+    });
     const response = toQuoteResponse(row);
     expect(response.baseAmount).toBe('0.5');
     expect(response.quoteAmount).toBe('33562.55');

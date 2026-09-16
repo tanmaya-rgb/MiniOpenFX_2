@@ -1,4 +1,9 @@
-import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { Public } from '../common/decorators/public.decorator.js';
 import { DRIZZLE, type DrizzleDb } from '../db/drizzle.module.js';

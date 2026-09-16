@@ -11,7 +11,12 @@ async function executeFreshTrade(app: INestApplication): Promise<string> {
   const quote = await request(app.getHttpServer())
     .post('/v1/quotes')
     .set(authHeader(API_KEY))
-    .send({ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.0001', ttlSeconds: 60 })
+    .send({
+      symbol: 'BTCUSDT',
+      side: 'BUY',
+      baseAmount: '0.0001',
+      ttlSeconds: 60,
+    })
     .expect(201);
 
   const trade = await request(app.getHttpServer())
@@ -49,7 +54,11 @@ describe('Trade History (e2e)', () => {
   });
 
   it('paginates with no duplicates and no gaps across pages', async () => {
-    const created = [await executeFreshTrade(app), await executeFreshTrade(app), await executeFreshTrade(app)];
+    const created = [
+      await executeFreshTrade(app),
+      await executeFreshTrade(app),
+      await executeFreshTrade(app),
+    ];
 
     const seen: string[] = [];
     let cursor: string | undefined;

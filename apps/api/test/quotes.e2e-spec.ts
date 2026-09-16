@@ -22,7 +22,12 @@ describe('Quotes (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/v1/quotes')
       .set(authHeader(API_KEY))
-      .send({ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.001', ttlSeconds: 60 })
+      .send({
+        symbol: 'BTCUSDT',
+        side: 'BUY',
+        baseAmount: '0.001',
+        ttlSeconds: 60,
+      })
       .expect(201);
 
     expect(res.body).toMatchObject({
@@ -35,32 +40,69 @@ describe('Quotes (e2e)', () => {
     });
     expect(Number(res.body.price)).toBeGreaterThan(0);
     expect(Number(res.body.quoteAmount)).toBeGreaterThan(0);
-    expect(new Date(res.body.expiresAt).getTime()).toBeGreaterThan(before + 59_000);
+    expect(new Date(res.body.expiresAt).getTime()).toBeGreaterThan(
+      before + 59_000,
+    );
   });
 
   it('SELL is priced independently of BUY (bid vs ask)', async () => {
     const buy = await request(app.getHttpServer())
       .post('/v1/quotes')
       .set(authHeader(API_KEY))
-      .send({ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.001', ttlSeconds: 60 })
+      .send({
+        symbol: 'BTCUSDT',
+        side: 'BUY',
+        baseAmount: '0.001',
+        ttlSeconds: 60,
+      })
       .expect(201);
     const sell = await request(app.getHttpServer())
       .post('/v1/quotes')
       .set(authHeader(API_KEY))
-      .send({ symbol: 'BTCUSDT', side: 'SELL', baseAmount: '0.001', ttlSeconds: 60 })
+      .send({
+        symbol: 'BTCUSDT',
+        side: 'SELL',
+        baseAmount: '0.001',
+        ttlSeconds: 60,
+      })
       .expect(201);
 
     // ask >= bid always holds on a real order book.
-    expect(Number(buy.body.price)).toBeGreaterThanOrEqual(Number(sell.body.price));
+    expect(Number(buy.body.price)).toBeGreaterThanOrEqual(
+      Number(sell.body.price),
+    );
   });
 
   it.each([
-    [{ symbol: 'BTCUSDT', side: 'HOLD', baseAmount: '0.5', ttlSeconds: 60 }, 'invalid side'],
-    [{ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.123456789', ttlSeconds: 60 }, 'too many decimals'],
-    [{ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '-1', ttlSeconds: 60 }, 'negative amount'],
-    [{ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.5', ttlSeconds: 0 }, 'ttl below minimum'],
-    [{ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.5', ttlSeconds: 301 }, 'ttl above maximum'],
-    [{ symbol: 'btc', side: 'BUY', baseAmount: '0.5', ttlSeconds: 60 }, 'malformed symbol'],
+    [
+      { symbol: 'BTCUSDT', side: 'HOLD', baseAmount: '0.5', ttlSeconds: 60 },
+      'invalid side',
+    ],
+    [
+      {
+        symbol: 'BTCUSDT',
+        side: 'BUY',
+        baseAmount: '0.123456789',
+        ttlSeconds: 60,
+      },
+      'too many decimals',
+    ],
+    [
+      { symbol: 'BTCUSDT', side: 'BUY', baseAmount: '-1', ttlSeconds: 60 },
+      'negative amount',
+    ],
+    [
+      { symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.5', ttlSeconds: 0 },
+      'ttl below minimum',
+    ],
+    [
+      { symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.5', ttlSeconds: 301 },
+      'ttl above maximum',
+    ],
+    [
+      { symbol: 'btc', side: 'BUY', baseAmount: '0.5', ttlSeconds: 60 },
+      'malformed symbol',
+    ],
   ])('400s on %j (%s)', async (body) => {
     await request(app.getHttpServer())
       .post('/v1/quotes')
@@ -73,14 +115,24 @@ describe('Quotes (e2e)', () => {
     return request(app.getHttpServer())
       .post('/v1/quotes')
       .set(authHeader(API_KEY))
-      .send({ symbol: 'ZZZZZUSDT', side: 'BUY', baseAmount: '0.5', ttlSeconds: 60 })
+      .send({
+        symbol: 'ZZZZZUSDT',
+        side: 'BUY',
+        baseAmount: '0.5',
+        ttlSeconds: 60,
+      })
       .expect(400);
   });
 
   it('requires auth', () => {
     return request(app.getHttpServer())
       .post('/v1/quotes')
-      .send({ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.5', ttlSeconds: 60 })
+      .send({
+        symbol: 'BTCUSDT',
+        side: 'BUY',
+        baseAmount: '0.5',
+        ttlSeconds: 60,
+      })
       .expect(401);
   });
 
@@ -89,7 +141,12 @@ describe('Quotes (e2e)', () => {
       const created = await request(app.getHttpServer())
         .post('/v1/quotes')
         .set(authHeader(API_KEY))
-        .send({ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.001', ttlSeconds: 60 })
+        .send({
+          symbol: 'BTCUSDT',
+          side: 'BUY',
+          baseAmount: '0.001',
+          ttlSeconds: 60,
+        })
         .expect(201);
 
       const fetched = await request(app.getHttpServer())
@@ -104,7 +161,12 @@ describe('Quotes (e2e)', () => {
       const created = await request(app.getHttpServer())
         .post('/v1/quotes')
         .set(authHeader(API_KEY))
-        .send({ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.001', ttlSeconds: 1 })
+        .send({
+          symbol: 'BTCUSDT',
+          side: 'BUY',
+          baseAmount: '0.001',
+          ttlSeconds: 1,
+        })
         .expect(201);
 
       await new Promise((resolve) => setTimeout(resolve, 1100));
@@ -131,11 +193,16 @@ describe('Quotes (e2e)', () => {
         .expect(404);
     });
 
-    it("404s (not 403, never leaking existence) a quote that belongs to a different client", async () => {
+    it('404s (not 403, never leaking existence) a quote that belongs to a different client', async () => {
       const created = await request(app.getHttpServer())
         .post('/v1/quotes')
         .set(authHeader(API_KEY))
-        .send({ symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.001', ttlSeconds: 60 })
+        .send({
+          symbol: 'BTCUSDT',
+          side: 'BUY',
+          baseAmount: '0.001',
+          ttlSeconds: 60,
+        })
         .expect(201);
 
       const other = await ensureSecondTestClient();

@@ -44,7 +44,9 @@ export class ApiKeyAuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader?.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Missing or malformed Authorization header');
+      throw new UnauthorizedException(
+        'Missing or malformed Authorization header',
+      );
     }
     const apiKey = authHeader.slice('Bearer '.length).trim();
 

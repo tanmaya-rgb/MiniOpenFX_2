@@ -8,7 +8,8 @@ export function TradeHistoryPage() {
   const [trades, setTrades] = useState<TradeResponse[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // Starts true — see the mount effect below.
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   async function load(reset: boolean) {
@@ -26,8 +27,33 @@ export function TradeHistoryPage() {
     }
   }
 
+  // Deliberately not `void load(true)`: load() closes over `cursor` and
+  // sets state synchronously (both needed for the Refresh/Load-more click
+  // handlers), which trips the "no setState synchronously inside an effect"
+  // and exhaustive-deps lint rules when called from here. The first page
+  // never depends on `cursor`, so this fetches it directly instead.
   useEffect(() => {
-    void load(true);
+    let ignore = false;
+    api
+      .getTrades({ limit: 20 })
+      .then((page) => {
+        if (!ignore) {
+          setTrades(page.trades);
+          setCursor(page.nextCursor);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) setError(err instanceof Error ? err : new Error('Unknown error'));
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+          setHasLoaded(true);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   return (

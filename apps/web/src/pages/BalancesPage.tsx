@@ -5,8 +5,10 @@ import { Card } from '../components/Card';
 import { ErrorBanner } from '../components/ErrorBanner';
 
 export function BalancesPage() {
+  // Starts true (not set via an effect) because the mount effect below
+  // always fetches immediately — see its comment for why.
   const [balances, setBalances] = useState<BalanceResponse[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const [currency, setCurrency] = useState('USDT');
@@ -26,8 +28,27 @@ export function BalancesPage() {
     }
   }
 
+  // Deliberately not just `void refresh()`: refresh() sets loading/error
+  // synchronously (needed for the Refresh button's click handler), which
+  // trips the "no setState synchronously inside an effect" lint rule when
+  // called from here. On mount, `loading`/`error` already start correct
+  // (true/null), so this only needs to settle state once the fetch resolves.
   useEffect(() => {
-    void refresh();
+    let ignore = false;
+    api
+      .getBalances()
+      .then((data) => {
+        if (!ignore) setBalances(data);
+      })
+      .catch((err: unknown) => {
+        if (!ignore) setError(err instanceof Error ? err : new Error('Unknown error'));
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   async function deposit(e: React.FormEvent) {

@@ -8,21 +8,27 @@ describe('assertOwnedByClient', () => {
   });
 
   it('throws NotFoundException when the row is null', () => {
-    expect(() => assertOwnedByClient(null, 'client-1', 'not found')).toThrow(NotFoundException);
+    expect(() => assertOwnedByClient(null, 'client-1', 'not found')).toThrow(
+      NotFoundException,
+    );
   });
 
   it('throws NotFoundException when the row is undefined', () => {
-    expect(() => assertOwnedByClient(undefined, 'client-1', 'not found')).toThrow(NotFoundException);
+    expect(() =>
+      assertOwnedByClient(undefined, 'client-1', 'not found'),
+    ).toThrow(NotFoundException);
   });
 
   it('throws NotFoundException (not some other error) when the row belongs to a different client', () => {
     const row = { clientId: 'someone-else', value: 'x' };
-    expect(() => assertOwnedByClient(row, 'client-1', 'not found')).toThrow(NotFoundException);
+    expect(() => assertOwnedByClient(row, 'client-1', 'not found')).toThrow(
+      NotFoundException,
+    );
   });
 
   it('uses the provided message on the thrown exception', () => {
-    expect(() => assertOwnedByClient(null, 'client-1', 'Quote "abc" not found')).toThrow(
-      'Quote "abc" not found',
-    );
+    expect(() =>
+      assertOwnedByClient(null, 'client-1', 'Quote "abc" not found'),
+    ).toThrow('Quote "abc" not found');
   });
 });

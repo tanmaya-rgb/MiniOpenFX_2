@@ -3,7 +3,11 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import { decodeCursor, encodeCursor } from '../common/cursor-pagination.js';
 import { DRIZZLE, type DrizzleDb } from '../db/drizzle.module.js';
 import { trades } from '../db/schema.js';
-import { toTradeResponse, type TradeResponse, type TradeRow } from '../trading/trade.mapper.js';
+import {
+  toTradeResponse,
+  type TradeResponse,
+  type TradeRow,
+} from '../trading/trade.mapper.js';
 import type { GetTradesQueryDto } from './dto/get-trades-query.dto.js';
 
 export interface TradeHistoryPage {
@@ -15,7 +19,10 @@ export interface TradeHistoryPage {
 export class TradesService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDb) {}
 
-  async getTradeHistory(clientId: string, query: GetTradesQueryDto): Promise<TradeHistoryPage> {
+  async getTradeHistory(
+    clientId: string,
+    query: GetTradesQueryDto,
+  ): Promise<TradeHistoryPage> {
     const conditions = [eq(trades.clientId, clientId)];
 
     if (query.cursor) {
@@ -42,7 +49,10 @@ export class TradesService {
 
     return {
       trades: page.map(toTradeResponse),
-      nextCursor: hasMore && last ? encodeCursor({ createdAt: last.createdAt, id: last.id }) : null,
+      nextCursor:
+        hasMore && last
+          ? encodeCursor({ createdAt: last.createdAt, id: last.id })
+          : null,
     };
   }
 }
