@@ -1,13 +1,13 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { Decimal } from 'decimal.js';
 import { eq } from 'drizzle-orm';
 import { assertOwnedByClient } from '../common/assert-owned-by-client.js';
 import { DRIZZLE, type DrizzleDb } from '../db/drizzle.module.js';
 import { quotes } from '../db/schema.js';
-import { fromMinorUnits, roundToMinorUnits, toMinorUnits } from '../domain/money.js';
+import { toMinorUnits } from '../domain/money.js';
 import { PricingService } from '../pricing/pricing.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import type { CreateQuoteDto } from './dto/create-quote.dto.js';
+import { computeQuoteAmount } from './quote-pricing.js';
 import {
   deserializeQuote,
   quoteCacheKey,
@@ -45,16 +45,11 @@ export class QuotingService {
       this.pricingService.getPrice(dto.symbol),
     ]);
 
-    // BUY: client pays quote currency to acquire base, at the (higher) ask.
-    // SELL: client gives up base currency, at the (lower) bid.
-    const price = dto.side === 'BUY' ? indicativePrice.ask : indicativePrice.bid;
-
-    // Round in the house's favor: what a client owes rounds up, what a
-    // client receives rounds down, so fractional minor units never leak.
-    const rawQuoteAmount = fromMinorUnits(baseAmountMinor).mul(price);
-    const quoteAmountMinor = roundToMinorUnits(
-      rawQuoteAmount,
-      dto.side === 'BUY' ? Decimal.ROUND_UP : Decimal.ROUND_DOWN,
+    const { price, quoteAmountMinor } = computeQuoteAmount(
+      dto.side,
+      baseAmountMinor,
+      indicativePrice.ask,
+      indicativePrice.bid,
     );
     if (quoteAmountMinor <= 0n) {
       throw new BadRequestException(
