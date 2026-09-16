@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+
+    # Same images/config as docker-compose.yml, so CI mirrors local dev.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: miniopenfx
+          POSTGRES_PASSWORD: miniopenfx
+          POSTGRES_DB: miniopenfx
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U miniopenfx -d miniopenfx"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Matches src/config/env.validation.ts — every var the app actually
+    # reads, pointed at the service containers above (reachable via
+    # localhost since this job runs directly on the runner, not in a
+    # container).
+    env:
+      DATABASE_URL: postgres://miniopenfx:miniopenfx@localhost:5432/miniopenfx
+      REDIS_URL: redis://localhost:6379
+      SEEDED_API_KEY: ci-seeded-api-key
+      PRICE_CACHE_TTL_MS: 1500
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: 'npm'
+
+      - name: Install dependencies (all workspaces)
+        run: npm ci
+
+      - name: Lint apps/api
+        run: npm run lint -w apps/api
+
+      - name: Lint apps/web
+        run: npm run lint -w apps/web
+
+      - name: Typecheck apps/api
+        run: npm run typecheck -w apps/api
+
+      - name: Typecheck apps/web
+        run: npm run typecheck -w apps/web
+
+      - name: Run database migrations
+        run: npm run db:migrate -w apps/api
+
+      # Most e2e specs authenticate as the one seeded demo client (see
+      # src/db/seed.ts) — without this, every auth-required e2e test would
+      # 401 against a fresh CI database.
+      - name: Seed database
+        run: npm run db:seed -w apps/api
+
+      - name: Unit tests (apps/api)
+        run: npm run test -w apps/api
+
+      - name: E2E tests (apps/api, against real Postgres + Redis)
+        run: npm run test:e2e -w apps/api
+
+      # apps/web has no test script yet — build is the smoke check.
+      - name: Build apps/web
+        run: npm run build -w apps/web
+
+      - name: Build apps/api
+        run: npm run build -w apps/api
