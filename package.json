@@ -6,10 +6,11 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build -w apps/api",
+    "build": "npm run build --workspaces --if-present",
     "start:dev": "npm run start:dev -w apps/api",
-    "lint": "npm run lint -w apps/api",
-    "typecheck": "npm run typecheck -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test -w apps/api",
     "test:e2e": "npm run test:e2e -w apps/api",
     "db:generate": "npm run db:generate -w apps/api",
