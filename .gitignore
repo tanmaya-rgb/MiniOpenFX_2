@@ -6,3 +6,5 @@ coverage/
 .DS_Store
 *.tsbuildinfo
 CLAUDE.md
+PLAN.md
+FRONTEND.md
