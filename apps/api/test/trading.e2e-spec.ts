@@ -12,7 +12,6 @@ async function createActiveQuote(
     symbol: string;
     side: 'BUY' | 'SELL';
     baseAmount: string;
-    ttlSeconds: number;
   }> = {},
 ) {
   const res = await request(app.getHttpServer())
@@ -22,7 +21,6 @@ async function createActiveQuote(
       symbol: 'BTCUSDT',
       side: 'BUY',
       baseAmount: '0.001',
-      ttlSeconds: 60,
       ...overrides,
     })
     .expect(201);
@@ -164,17 +162,22 @@ describe('Trading (e2e)', () => {
       .expect(409);
   });
 
-  it('410s executing a quote after its TTL has elapsed', async () => {
-    const quote = await createActiveQuote(app, { ttlSeconds: 1 });
-    await new Promise((resolve) => setTimeout(resolve, 1100));
+  it(
+    '410s executing a quote after its TTL has elapsed',
+    async () => {
+      const quote = await createActiveQuote(app);
+      // TTL is a fixed 15s server-side (see quoting.service.ts); wait it out.
+      await new Promise((resolve) => setTimeout(resolve, 15_100));
 
-    await request(app.getHttpServer())
-      .post('/v1/trades')
-      .set(authHeader(API_KEY))
-      .set('Idempotency-Key', randomUUID())
-      .send({ quoteId: quote.id })
-      .expect(410);
-  });
+      await request(app.getHttpServer())
+        .post('/v1/trades')
+        .set(authHeader(API_KEY))
+        .set('Idempotency-Key', randomUUID())
+        .send({ quoteId: quote.id })
+        .expect(410);
+    },
+    20_000,
+  );
 
   it('422s a trade that would exceed the available balance, leaving the balance untouched', async () => {
     const usdtBefore = await getBalance(app, 'USDT');

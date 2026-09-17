@@ -14,7 +14,6 @@ export function QuotesPage() {
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [side, setSide] = useState<TradeSide>('BUY');
   const [baseAmount, setBaseAmount] = useState('0.01');
-  const [ttlSeconds, setTtlSeconds] = useState(60);
 
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [status, setStatus] = useState<ClientQuoteStatus>('ACTIVE');
@@ -52,7 +51,6 @@ export function QuotesPage() {
         symbol: symbol.trim().toUpperCase(),
         side,
         baseAmount: baseAmount.trim(),
-        ttlSeconds,
       });
       setQuote(result);
       setStatus(result.status === 'EXECUTED' ? 'EXECUTED' : 'ACTIVE');
@@ -94,7 +92,7 @@ export function QuotesPage() {
   return (
     <div className="space-y-6">
       <Card title="New Quote">
-        <form onSubmit={createQuote} className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <form onSubmit={createQuote} className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <label className="col-span-1 flex flex-col gap-1 text-sm">
             Symbol
             <input
@@ -122,18 +120,7 @@ export function QuotesPage() {
               className="rounded-md border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none"
             />
           </label>
-          <label className="col-span-1 flex flex-col gap-1 text-sm">
-            TTL (seconds)
-            <input
-              type="number"
-              min={1}
-              max={300}
-              value={ttlSeconds}
-              onChange={(e) => setTtlSeconds(Number(e.target.value))}
-              className="rounded-md border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none"
-            />
-          </label>
-          <div className="col-span-2 sm:col-span-4">
+          <div className="col-span-2 sm:col-span-3">
             <button
               type="submit"
               disabled={creating || !symbol.trim() || !baseAmount.trim()}

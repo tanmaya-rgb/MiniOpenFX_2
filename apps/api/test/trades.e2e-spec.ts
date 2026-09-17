@@ -15,7 +15,6 @@ async function executeFreshTrade(app: INestApplication): Promise<string> {
       symbol: 'BTCUSDT',
       side: 'BUY',
       baseAmount: '0.0001',
-      ttlSeconds: 60,
     })
     .expect(201);
 

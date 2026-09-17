@@ -151,7 +151,7 @@ curl -H "Authorization: Bearer $KEY" "$API/v1/prices?symbol=BTCUSDT"
 
 ```bash
 curl -X POST -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
-  -d '{"symbol":"BTCUSDT","side":"BUY","baseAmount":"0.001","ttlSeconds":60}' \
+  -d '{"symbol":"BTCUSDT","side":"BUY","baseAmount":"0.001"}' \
   $API/v1/quotes
 # {"id":"90b2e4c0-6f24-471f-af8e-bd582c37cd3c","symbol":"BTCUSDT","side":"BUY",
 #  "baseCurrency":"BTC","quoteCurrency":"USDT","baseAmount":"0.001",

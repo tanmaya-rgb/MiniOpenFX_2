@@ -1,10 +1,8 @@
 import { Transform } from 'class-transformer';
-import { IsIn, IsInt, IsString, Matches, Max, Min } from 'class-validator';
+import { IsIn, IsString, Matches } from 'class-validator';
 import { POSITIVE_DECIMAL_REGEX } from '../../domain/money.js';
 import { SYMBOL_FORMAT_REGEX } from '../../domain/symbol.js';
 import { tradeSideValues, type TradeSide } from '../../db/schema.js';
-
-const MAX_TTL_SECONDS = 300;
 
 export class CreateQuoteDto {
   @Transform(({ value }) =>
@@ -24,9 +22,4 @@ export class CreateQuoteDto {
     message: 'baseAmount must be a positive decimal string like "0.5"',
   })
   baseAmount!: string;
-
-  @IsInt()
-  @Min(1)
-  @Max(MAX_TTL_SECONDS)
-  ttlSeconds!: number;
 }

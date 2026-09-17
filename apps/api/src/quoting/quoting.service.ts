@@ -17,6 +17,8 @@ import {
   type QuoteRow,
 } from './quote.mapper.js';
 
+const DEFAULT_QUOTE_TTL_SECONDS = 15;
+
 @Injectable()
 export class QuotingService {
   constructor(
@@ -60,7 +62,9 @@ export class QuotingService {
       );
     }
 
-    const expiresAt = new Date(Date.now() + dto.ttlSeconds * 1000);
+    const expiresAt = new Date(
+      Date.now() + DEFAULT_QUOTE_TTL_SECONDS * 1000,
+    );
 
     const [row] = (await this.db
       .insert(quotes)
@@ -81,7 +85,7 @@ export class QuotingService {
     await this.redis.setJson(
       quoteCacheKey(row.id),
       serializeQuote(row),
-      dto.ttlSeconds * 1000,
+      DEFAULT_QUOTE_TTL_SECONDS * 1000,
     );
 
     return toQuoteResponse(row);

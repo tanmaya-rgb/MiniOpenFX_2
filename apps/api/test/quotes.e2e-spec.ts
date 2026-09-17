@@ -26,7 +26,6 @@ describe('Quotes (e2e)', () => {
         symbol: 'BTCUSDT',
         side: 'BUY',
         baseAmount: '0.001',
-        ttlSeconds: 60,
       })
       .expect(201);
 
@@ -41,7 +40,7 @@ describe('Quotes (e2e)', () => {
     expect(Number(res.body.price)).toBeGreaterThan(0);
     expect(Number(res.body.quoteAmount)).toBeGreaterThan(0);
     expect(new Date(res.body.expiresAt).getTime()).toBeGreaterThan(
-      before + 59_000,
+      before + 14_000,
     );
   });
 
@@ -53,7 +52,6 @@ describe('Quotes (e2e)', () => {
         symbol: 'BTCUSDT',
         side: 'BUY',
         baseAmount: '0.001',
-        ttlSeconds: 60,
       })
       .expect(201);
     const sell = await request(app.getHttpServer())
@@ -63,7 +61,6 @@ describe('Quotes (e2e)', () => {
         symbol: 'BTCUSDT',
         side: 'SELL',
         baseAmount: '0.001',
-        ttlSeconds: 60,
       })
       .expect(201);
 
@@ -75,7 +72,7 @@ describe('Quotes (e2e)', () => {
 
   it.each([
     [
-      { symbol: 'BTCUSDT', side: 'HOLD', baseAmount: '0.5', ttlSeconds: 60 },
+      { symbol: 'BTCUSDT', side: 'HOLD', baseAmount: '0.5' },
       'invalid side',
     ],
     [
@@ -83,24 +80,15 @@ describe('Quotes (e2e)', () => {
         symbol: 'BTCUSDT',
         side: 'BUY',
         baseAmount: '0.123456789',
-        ttlSeconds: 60,
       },
       'too many decimals',
     ],
     [
-      { symbol: 'BTCUSDT', side: 'BUY', baseAmount: '-1', ttlSeconds: 60 },
+      { symbol: 'BTCUSDT', side: 'BUY', baseAmount: '-1' },
       'negative amount',
     ],
     [
-      { symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.5', ttlSeconds: 0 },
-      'ttl below minimum',
-    ],
-    [
-      { symbol: 'BTCUSDT', side: 'BUY', baseAmount: '0.5', ttlSeconds: 301 },
-      'ttl above maximum',
-    ],
-    [
-      { symbol: 'btc', side: 'BUY', baseAmount: '0.5', ttlSeconds: 60 },
+      { symbol: 'btc', side: 'BUY', baseAmount: '0.5' },
       'malformed symbol',
     ],
   ])('400s on %j (%s)', async (body) => {
@@ -119,7 +107,6 @@ describe('Quotes (e2e)', () => {
         symbol: 'ZZZZZUSDT',
         side: 'BUY',
         baseAmount: '0.5',
-        ttlSeconds: 60,
       })
       .expect(400);
   });
@@ -131,7 +118,6 @@ describe('Quotes (e2e)', () => {
         symbol: 'BTCUSDT',
         side: 'BUY',
         baseAmount: '0.5',
-        ttlSeconds: 60,
       })
       .expect(401);
   });
@@ -145,7 +131,6 @@ describe('Quotes (e2e)', () => {
           symbol: 'BTCUSDT',
           side: 'BUY',
           baseAmount: '0.001',
-          ttlSeconds: 60,
         })
         .expect(201);
 
@@ -157,27 +142,31 @@ describe('Quotes (e2e)', () => {
       expect(fetched.body).toEqual(created.body);
     });
 
-    it('derives EXPIRED once the TTL has elapsed, without the DB status ever changing', async () => {
-      const created = await request(app.getHttpServer())
-        .post('/v1/quotes')
-        .set(authHeader(API_KEY))
-        .send({
-          symbol: 'BTCUSDT',
-          side: 'BUY',
-          baseAmount: '0.001',
-          ttlSeconds: 1,
-        })
-        .expect(201);
+    it(
+      'derives EXPIRED once the TTL has elapsed, without the DB status ever changing',
+      async () => {
+        const created = await request(app.getHttpServer())
+          .post('/v1/quotes')
+          .set(authHeader(API_KEY))
+          .send({
+            symbol: 'BTCUSDT',
+            side: 'BUY',
+            baseAmount: '0.001',
+          })
+          .expect(201);
 
-      await new Promise((resolve) => setTimeout(resolve, 1100));
+        // TTL is a fixed 15s server-side (see quoting.service.ts); wait it out.
+        await new Promise((resolve) => setTimeout(resolve, 15_100));
 
-      const fetched = await request(app.getHttpServer())
-        .get(`/v1/quotes/${created.body.id}`)
-        .set(authHeader(API_KEY))
-        .expect(200);
+        const fetched = await request(app.getHttpServer())
+          .get(`/v1/quotes/${created.body.id}`)
+          .set(authHeader(API_KEY))
+          .expect(200);
 
-      expect(fetched.body.status).toBe('EXPIRED');
-    });
+        expect(fetched.body.status).toBe('EXPIRED');
+      },
+      20_000,
+    );
 
     it('400s a malformed (non-UUID) id', () => {
       return request(app.getHttpServer())
@@ -201,7 +190,6 @@ describe('Quotes (e2e)', () => {
           symbol: 'BTCUSDT',
           side: 'BUY',
           baseAmount: '0.001',
-          ttlSeconds: 60,
         })
         .expect(201);
 

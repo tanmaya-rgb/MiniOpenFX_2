@@ -58,7 +58,6 @@ export interface CreateQuoteRequest {
   symbol: string;
   side: TradeSide;
   baseAmount: string;
-  ttlSeconds: number;
 }
 
 export interface CreateDepositRequest {
