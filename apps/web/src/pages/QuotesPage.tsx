@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, ApiError } from '../api/client';
-import type { QuoteResponse, TradeResponse, TradeSide } from '../api/types';
+import type { BalanceResponse, QuoteResponse, TradeResponse, TradeSide } from '../api/types';
 import { Card } from '../components/Card';
+import { CurrencySelect } from '../components/CurrencySelect';
 import { ErrorBanner } from '../components/ErrorBanner';
 
 type ClientQuoteStatus = 'ACTIVE' | 'EXPIRED' | 'EXECUTED';
@@ -10,10 +11,31 @@ function msRemaining(expiresAt: string): number {
   return new Date(expiresAt).getTime() - Date.now();
 }
 
+function SwapIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path
+        d="M7 10V5m0 0L4.5 7.5M7 5l2.5 2.5M17 14v5m0 0l2.5-2.5M17 19l-2.5-2.5"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function QuotesPage() {
-  const [symbol, setSymbol] = useState('BTCUSDT');
-  const [side, setSide] = useState<TradeSide>('BUY');
-  const [baseAmount, setBaseAmount] = useState('0.01');
+  const [buyCurrency, setBuyCurrency] = useState('BTC');
+  const [sellCurrency, setSellCurrency] = useState('USDT');
+  const [buyAmount, setBuyAmount] = useState('0.01');
+  const [sellAmount, setSellAmount] = useState('');
+  // Which card the user last typed an amount into — that's the side/base
+  // amount that gets sent to POST /v1/quotes; the other card is filled in
+  // from the response, never recomputed live.
+  const [activeSide, setActiveSide] = useState<TradeSide>('BUY');
+
+  const [balances, setBalances] = useState<BalanceResponse[] | null>(null);
 
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [status, setStatus] = useState<ClientQuoteStatus>('ACTIVE');
@@ -25,6 +47,21 @@ export function QuotesPage() {
   const [executing, setExecuting] = useState(false);
   const [createError, setCreateError] = useState<ApiError | Error | null>(null);
   const [executeError, setExecuteError] = useState<ApiError | Error | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+    api
+      .getBalances()
+      .then((data) => {
+        if (!ignore) setBalances(data);
+      })
+      .catch(() => {
+        // Balance line is a convenience, not load-bearing — leave it blank on failure.
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!quote || status !== 'ACTIVE') return;
@@ -40,21 +77,54 @@ export function QuotesPage() {
     return () => clearInterval(interval);
   }, [quote, status]);
 
+  function balanceFor(currency: string): string {
+    return balances?.find((b) => b.currency === currency)?.available ?? '0';
+  }
+
+  function refreshBalances() {
+    api
+      .getBalances()
+      .then(setBalances)
+      .catch(() => {
+        // ignore — see mount effect comment
+      });
+  }
+
+  function swap() {
+    // Swapping which currency occupies which card changes which pair
+    // direction/side any previously-typed amount meant, so amounts (and any
+    // quote fetched for the old pair) are cleared rather than carried over —
+    // the user re-enters an amount for the new pair.
+    setBuyCurrency(sellCurrency);
+    setSellCurrency(buyCurrency);
+    setBuyAmount('');
+    setSellAmount('');
+    setActiveSide('BUY');
+    reset();
+  }
+
   async function createQuote(e: React.FormEvent) {
     e.preventDefault();
+    const isBuy = activeSide === 'BUY';
+    const baseCurrency = isBuy ? buyCurrency : sellCurrency;
+    const quoteCurrency = isBuy ? sellCurrency : buyCurrency;
+    const baseAmount = (isBuy ? buyAmount : sellAmount).trim();
+    const symbol = `${baseCurrency}${quoteCurrency}`.toUpperCase();
+
     setCreating(true);
     setCreateError(null);
     setExecuteError(null);
     setTrade(null);
     try {
-      const result = await api.createQuote({
-        symbol: symbol.trim().toUpperCase(),
-        side,
-        baseAmount: baseAmount.trim(),
-      });
+      const result = await api.createQuote({ symbol, side: activeSide, baseAmount });
       setQuote(result);
       setStatus(result.status === 'EXECUTED' ? 'EXECUTED' : 'ACTIVE');
       idempotencyKeyRef.current = crypto.randomUUID();
+      if (isBuy) {
+        setSellAmount(result.quoteAmount);
+      } else {
+        setBuyAmount(result.quoteAmount);
+      }
     } catch (err) {
       setCreateError(err instanceof Error ? err : new Error('Unknown error'));
     } finally {
@@ -70,6 +140,7 @@ export function QuotesPage() {
       const result = await api.createTrade(quote.id, idempotencyKeyRef.current);
       setTrade(result);
       setStatus('EXECUTED');
+      refreshBalances();
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 410) setStatus('EXPIRED');
@@ -89,51 +160,81 @@ export function QuotesPage() {
     idempotencyKeyRef.current = null;
   }
 
+  const sameCurrency = buyCurrency === sellCurrency;
+  const activeAmount = (activeSide === 'BUY' ? buyAmount : sellAmount).trim();
+
   return (
     <div className="space-y-6">
-      <Card title="New Quote">
-        <form onSubmit={createQuote} className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <label className="col-span-1 flex flex-col gap-1 text-sm">
-            Symbol
-            <input
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 uppercase focus:border-slate-500 focus:outline-none"
-            />
-          </label>
-          <label className="col-span-1 flex flex-col gap-1 text-sm">
-            Side
-            <select
-              value={side}
-              onChange={(e) => setSide(e.target.value as TradeSide)}
-              className="rounded-md border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none"
-            >
-              <option value="BUY">BUY</option>
-              <option value="SELL">SELL</option>
-            </select>
-          </label>
-          <label className="col-span-1 flex flex-col gap-1 text-sm">
-            Base amount
-            <input
-              value={baseAmount}
-              onChange={(e) => setBaseAmount(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 focus:border-slate-500 focus:outline-none"
-            />
-          </label>
-          <div className="col-span-2 sm:col-span-3">
+      <form onSubmit={createQuote}>
+        <div className="relative flex flex-col gap-3">
+          <div className="rounded-2xl bg-slate-900 p-5 text-white shadow-lg">
+            <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-emerald-400">Buy</div>
+            <div className="flex items-center justify-between gap-3">
+              <CurrencySelect variant="dark" value={buyCurrency} onChange={setBuyCurrency} aria-label="Buy currency" />
+              <input
+                value={buyAmount}
+                onChange={(e) => {
+                  setBuyAmount(e.target.value);
+                  setActiveSide('BUY');
+                }}
+                inputMode="decimal"
+                placeholder="0.00"
+                className="w-32 flex-1 bg-transparent text-right text-2xl font-semibold text-white placeholder-slate-600 focus:outline-none"
+              />
+            </div>
+            <div className="mt-3 text-xs text-slate-400">
+              {buyCurrency} balance: <span className="font-mono">{balanceFor(buyCurrency)}</span>
+            </div>
+          </div>
+
+          <div className="relative z-10 -my-5 flex justify-center">
             <button
-              type="submit"
-              disabled={creating || !symbol.trim() || !baseAmount.trim()}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              type="button"
+              onClick={swap}
+              aria-label="Swap currencies"
+              className="flex h-9 w-9 items-center justify-center rounded-full border-4 border-slate-50 bg-slate-700 text-white shadow hover:bg-slate-600"
             >
-              {creating ? 'Creating…' : 'Get quote'}
+              <SwapIcon />
             </button>
           </div>
-        </form>
+
+          <div className="rounded-2xl bg-slate-900 p-5 text-white shadow-lg">
+            <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-rose-400">Sell</div>
+            <div className="flex items-center justify-between gap-3">
+              <CurrencySelect variant="dark" value={sellCurrency} onChange={setSellCurrency} aria-label="Sell currency" />
+              <input
+                value={sellAmount}
+                onChange={(e) => {
+                  setSellAmount(e.target.value);
+                  setActiveSide('SELL');
+                }}
+                inputMode="decimal"
+                placeholder="0.00"
+                className="w-32 flex-1 bg-transparent text-right text-2xl font-semibold text-white placeholder-slate-600 focus:outline-none"
+              />
+            </div>
+            <div className="mt-3 text-xs text-slate-400">
+              {sellCurrency} balance: <span className="font-mono">{balanceFor(sellCurrency)}</span>
+            </div>
+          </div>
+        </div>
+
+        {sameCurrency && (
+          <p className="mt-3 text-sm text-amber-700">Pick two different currencies to get a quote.</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={creating || sameCurrency || !activeAmount}
+          className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+        >
+          {creating ? 'Creating…' : 'Get quote'}
+        </button>
+
         <div className="mt-4">
           <ErrorBanner error={createError} />
         </div>
-      </Card>
+      </form>
 
       {quote && (
         <Card title="Active Quote">
