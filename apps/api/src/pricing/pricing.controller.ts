@@ -8,6 +8,7 @@ export class PricingController {
 
   @Get()
   getPrice(@Query() query: GetPriceDto) {
-    return this.pricingService.getPrice(query.symbol);
+    const symbol = `${query.baseCurrency}${query.quoteCurrency}`;
+    return this.pricingService.getPrice(symbol);
   }
 }

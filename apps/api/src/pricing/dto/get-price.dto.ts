@@ -1,14 +1,23 @@
 import { Transform } from 'class-transformer';
 import { IsString, Matches } from 'class-validator';
-import { SYMBOL_FORMAT_REGEX } from '../../domain/symbol.js';
+import { CURRENCY_FORMAT_REGEX } from '../../domain/symbol.js';
 
 export class GetPriceDto {
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim().toUpperCase() : value,
   )
   @IsString()
-  @Matches(SYMBOL_FORMAT_REGEX, {
-    message: 'symbol must be an alphanumeric pair like BTCUSDT',
+  @Matches(CURRENCY_FORMAT_REGEX, {
+    message: 'baseCurrency must be an alphanumeric currency code like BTC',
   })
-  symbol!: string;
+  baseCurrency!: string;
+
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(CURRENCY_FORMAT_REGEX, {
+    message: 'quoteCurrency must be an alphanumeric currency code like USDT',
+  })
+  quoteCurrency!: string;
 }

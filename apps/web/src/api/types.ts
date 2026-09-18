@@ -55,7 +55,8 @@ export interface TradeHistoryPage {
 }
 
 export interface CreateQuoteRequest {
-  symbol: string;
+  baseCurrency: string;
+  quoteCurrency: string;
   side: TradeSide;
   baseAmount: string;
 }

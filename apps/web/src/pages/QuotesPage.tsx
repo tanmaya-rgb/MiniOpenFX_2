@@ -109,14 +109,13 @@ export function QuotesPage() {
     const baseCurrency = isBuy ? buyCurrency : sellCurrency;
     const quoteCurrency = isBuy ? sellCurrency : buyCurrency;
     const baseAmount = (isBuy ? buyAmount : sellAmount).trim();
-    const symbol = `${baseCurrency}${quoteCurrency}`.toUpperCase();
 
     setCreating(true);
     setCreateError(null);
     setExecuteError(null);
     setTrade(null);
     try {
-      const result = await api.createQuote({ symbol, side: activeSide, baseAmount });
+      const result = await api.createQuote({ baseCurrency, quoteCurrency, side: activeSide, baseAmount });
       setQuote(result);
       setStatus(result.status === 'EXECUTED' ? 'EXECUTED' : 'ACTIVE');
       idempotencyKeyRef.current = crypto.randomUUID();

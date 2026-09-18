@@ -83,8 +83,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 export const api = {
   getHealth: () => request<HealthResponse>('/v1/health', { auth: false }),
 
-  getPrice: (symbol: string) =>
-    request<PriceResponse>('/v1/prices', { query: { symbol } }),
+  getPrice: (baseCurrency: string, quoteCurrency: string) =>
+    request<PriceResponse>('/v1/prices', { query: { baseCurrency, quoteCurrency } }),
 
   createQuote: (body: CreateQuoteRequest) =>
     request<QuoteResponse>('/v1/quotes', { method: 'POST', body }),

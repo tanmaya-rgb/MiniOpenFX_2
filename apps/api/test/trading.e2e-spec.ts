@@ -9,7 +9,8 @@ const API_KEY = process.env.SEEDED_API_KEY!;
 async function createActiveQuote(
   app: INestApplication,
   overrides: Partial<{
-    symbol: string;
+    baseCurrency: string;
+    quoteCurrency: string;
     side: 'BUY' | 'SELL';
     baseAmount: string;
   }> = {},
@@ -18,7 +19,8 @@ async function createActiveQuote(
     .post('/v1/quotes')
     .set(authHeader(API_KEY))
     .send({
-      symbol: 'BTCUSDT',
+      baseCurrency: 'BTC',
+      quoteCurrency: 'USDT',
       side: 'BUY',
       baseAmount: '0.001',
       ...overrides,

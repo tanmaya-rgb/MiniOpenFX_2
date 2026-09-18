@@ -329,7 +329,7 @@ curl $API/v1/health
 **Indicative price**
 
 ```bash
-curl -H "Authorization: Bearer $KEY" "$API/v1/prices?symbol=BTCUSDT"
+curl -H "Authorization: Bearer $KEY" "$API/v1/prices?baseCurrency=BTC&quoteCurrency=USDT"
 # {"symbol":"BTCUSDT","bid":"75989.11000000","ask":"75989.12000000","timestamp":1789558082836,"source":"binance"}
 ```
 
@@ -338,7 +338,7 @@ curl -H "Authorization: Bearer $KEY" "$API/v1/prices?symbol=BTCUSDT"
 
 ```bash
 curl -X POST -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
-  -d '{"symbol":"BTCUSDT","side":"BUY","baseAmount":"0.001"}' \
+  -d '{"baseCurrency":"BTC","quoteCurrency":"USDT","side":"BUY","baseAmount":"0.001"}' \
   $API/v1/quotes
 # {"id":"90b2e4c0-6f24-471f-af8e-bd582c37cd3c","symbol":"BTCUSDT","side":"BUY",
 #  "baseCurrency":"BTC","quoteCurrency":"USDT","baseAmount":"0.001",

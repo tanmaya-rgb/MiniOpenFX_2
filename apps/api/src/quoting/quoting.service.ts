@@ -43,11 +43,15 @@ export class QuotingService {
       throw new BadRequestException('baseAmount must be greater than zero');
     }
 
-    // Binance is the sole authority on both symbol validity and its
-    // base/quote breakdown (see CLAUDE.md) — never guess from a local list.
+    // baseCurrency/quoteCurrency arrive as separate fields; joining them
+    // into a symbol is purely a Binance API-shape detail, not something the
+    // caller should need to know about. Binance remains the sole authority
+    // on both symbol validity and its base/quote breakdown (see
+    // CLAUDE.md) — never guess from a local list.
+    const symbol = `${dto.baseCurrency}${dto.quoteCurrency}`;
     const [breakdown, indicativePrice] = await Promise.all([
-      this.pricingService.getSymbolBreakdown(dto.symbol),
-      this.pricingService.getPrice(dto.symbol),
+      this.pricingService.getSymbolBreakdown(symbol),
+      this.pricingService.getPrice(symbol),
     ]);
 
     const { price, quoteAmountMinor } = computeQuoteAmount(
@@ -70,7 +74,7 @@ export class QuotingService {
       .insert(quotes)
       .values({
         clientId,
-        symbol: dto.symbol,
+        symbol,
         side: dto.side,
         baseCurrency: breakdown.baseCurrency,
         quoteCurrency: breakdown.quoteCurrency,

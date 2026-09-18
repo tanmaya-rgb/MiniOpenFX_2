@@ -23,7 +23,8 @@ describe('Quotes (e2e)', () => {
       .post('/v1/quotes')
       .set(authHeader(API_KEY))
       .send({
-        symbol: 'BTCUSDT',
+        baseCurrency: 'BTC',
+        quoteCurrency: 'USDT',
         side: 'BUY',
         baseAmount: '0.001',
       })
@@ -49,7 +50,8 @@ describe('Quotes (e2e)', () => {
       .post('/v1/quotes')
       .set(authHeader(API_KEY))
       .send({
-        symbol: 'BTCUSDT',
+        baseCurrency: 'BTC',
+        quoteCurrency: 'USDT',
         side: 'BUY',
         baseAmount: '0.001',
       })
@@ -58,7 +60,8 @@ describe('Quotes (e2e)', () => {
       .post('/v1/quotes')
       .set(authHeader(API_KEY))
       .send({
-        symbol: 'BTCUSDT',
+        baseCurrency: 'BTC',
+        quoteCurrency: 'USDT',
         side: 'SELL',
         baseAmount: '0.001',
       })
@@ -72,24 +75,25 @@ describe('Quotes (e2e)', () => {
 
   it.each([
     [
-      { symbol: 'BTCUSDT', side: 'HOLD', baseAmount: '0.5' },
+      { baseCurrency: 'BTC', quoteCurrency: 'USDT', side: 'HOLD', baseAmount: '0.5' },
       'invalid side',
     ],
     [
       {
-        symbol: 'BTCUSDT',
+        baseCurrency: 'BTC',
+        quoteCurrency: 'USDT',
         side: 'BUY',
         baseAmount: '0.123456789',
       },
       'too many decimals',
     ],
     [
-      { symbol: 'BTCUSDT', side: 'BUY', baseAmount: '-1' },
+      { baseCurrency: 'BTC', quoteCurrency: 'USDT', side: 'BUY', baseAmount: '-1' },
       'negative amount',
     ],
     [
-      { symbol: 'btc', side: 'BUY', baseAmount: '0.5' },
-      'malformed symbol',
+      { baseCurrency: 'b', quoteCurrency: 'USDT', side: 'BUY', baseAmount: '0.5' },
+      'malformed baseCurrency',
     ],
   ])('400s on %j (%s)', async (body) => {
     await request(app.getHttpServer())
@@ -104,7 +108,8 @@ describe('Quotes (e2e)', () => {
       .post('/v1/quotes')
       .set(authHeader(API_KEY))
       .send({
-        symbol: 'ZZZZZUSDT',
+        baseCurrency: 'ZZZZZ',
+        quoteCurrency: 'USDT',
         side: 'BUY',
         baseAmount: '0.5',
       })
@@ -115,7 +120,8 @@ describe('Quotes (e2e)', () => {
     return request(app.getHttpServer())
       .post('/v1/quotes')
       .send({
-        symbol: 'BTCUSDT',
+        baseCurrency: 'BTC',
+        quoteCurrency: 'USDT',
         side: 'BUY',
         baseAmount: '0.5',
       })
@@ -128,7 +134,8 @@ describe('Quotes (e2e)', () => {
         .post('/v1/quotes')
         .set(authHeader(API_KEY))
         .send({
-          symbol: 'BTCUSDT',
+          baseCurrency: 'BTC',
+          quoteCurrency: 'USDT',
           side: 'BUY',
           baseAmount: '0.001',
         })
@@ -149,7 +156,8 @@ describe('Quotes (e2e)', () => {
           .post('/v1/quotes')
           .set(authHeader(API_KEY))
           .send({
-            symbol: 'BTCUSDT',
+            baseCurrency: 'BTC',
+            quoteCurrency: 'USDT',
             side: 'BUY',
             baseAmount: '0.001',
           })
@@ -187,7 +195,8 @@ describe('Quotes (e2e)', () => {
         .post('/v1/quotes')
         .set(authHeader(API_KEY))
         .send({
-          symbol: 'BTCUSDT',
+          baseCurrency: 'BTC',
+          quoteCurrency: 'USDT',
           side: 'BUY',
           baseAmount: '0.001',
         })

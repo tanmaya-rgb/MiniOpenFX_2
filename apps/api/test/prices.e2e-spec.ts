@@ -16,9 +16,9 @@ describe('Prices (e2e)', () => {
     await app.close();
   });
 
-  it('returns a live indicative price for a known symbol', () => {
+  it('returns a live indicative price for a known base/quote pair', () => {
     return request(app.getHttpServer())
-      .get('/v1/prices?symbol=BTCUSDT')
+      .get('/v1/prices?baseCurrency=BTC&quoteCurrency=USDT')
       .set(authHeader(API_KEY))
       .expect(200)
       .expect(({ body }) => {
@@ -31,9 +31,9 @@ describe('Prices (e2e)', () => {
       });
   });
 
-  it('normalizes symbol case', () => {
+  it('normalizes currency case', () => {
     return request(app.getHttpServer())
-      .get('/v1/prices?symbol=btcusdt')
+      .get('/v1/prices?baseCurrency=btc&quoteCurrency=usdt')
       .set(authHeader(API_KEY))
       .expect(200)
       .expect(({ body }) => {
@@ -41,23 +41,23 @@ describe('Prices (e2e)', () => {
       });
   });
 
-  it('400s a malformed symbol before ever reaching Binance', () => {
+  it('400s a malformed baseCurrency before ever reaching Binance', () => {
     return request(app.getHttpServer())
-      .get('/v1/prices?symbol=btc')
+      .get('/v1/prices?baseCurrency=b&quoteCurrency=USDT')
       .set(authHeader(API_KEY))
       .expect(400);
   });
 
-  it('400s a missing symbol query param', () => {
+  it('400s a missing quoteCurrency query param', () => {
     return request(app.getHttpServer())
-      .get('/v1/prices')
+      .get('/v1/prices?baseCurrency=BTC')
       .set(authHeader(API_KEY))
       .expect(400);
   });
 
-  it('400s a well-formed but nonexistent symbol (real Binance rejection)', () => {
+  it('400s a well-formed but nonexistent pair (real Binance rejection)', () => {
     return request(app.getHttpServer())
-      .get('/v1/prices?symbol=ZZZZZUSDT')
+      .get('/v1/prices?baseCurrency=ZZZZZ&quoteCurrency=USDT')
       .set(authHeader(API_KEY))
       .expect(400);
   });

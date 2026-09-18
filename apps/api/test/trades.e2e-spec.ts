@@ -12,7 +12,8 @@ async function executeFreshTrade(app: INestApplication): Promise<string> {
     .post('/v1/quotes')
     .set(authHeader(API_KEY))
     .send({
-      symbol: 'BTCUSDT',
+      baseCurrency: 'BTC',
+      quoteCurrency: 'USDT',
       side: 'BUY',
       baseAmount: '0.0001',
     })

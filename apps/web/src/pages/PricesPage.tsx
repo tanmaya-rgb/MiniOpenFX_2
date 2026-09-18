@@ -19,7 +19,7 @@ export function PricesPage() {
     setLoading(true);
     setError(null);
     try {
-      const result = await api.getPrice(`${baseCurrency}${quoteCurrency}`.toUpperCase());
+      const result = await api.getPrice(baseCurrency.toUpperCase(), quoteCurrency.toUpperCase());
       setPrice(result);
     } catch (err) {
       setPrice(null);
